@@ -31,4 +31,5 @@ themes/bootstrap5/scss/vendor/bootstrap
 local/DirLocations.ini
 local/config/vufind.bak
 local/config/vufind/*
+local/httpd-vufind.conf
 !local/config/vufind/README.txt
