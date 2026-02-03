@@ -1,7 +1,9 @@
 <?php $account = $this->auth()->getManager(); ?>
 <nav class="banner navbar navbar-expand-md">
   <div class="container">
-    <a class="navbar-brand lang-<?=$this->layout()->userLang ?>" href="<?=$this->url('home')?>">LA Referencia</a>
+    <a class="navbar-brand lang-<?=$this->layout()->userLang ?>" href="<?=$this->url('home')?>">
+      <img src="<?=$this->imageLink('logocolor.png')?>" alt="Logo LA Referencia" style="height: 50px;">
+    </a>
     <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#header-collapse" aria-label="<?=$this->transEscAttr('mobile_toggle_navigation_text')?>">
       <?=$this->icon('ui-menu') ?>
     </button>

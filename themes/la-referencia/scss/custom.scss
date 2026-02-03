@@ -2,7 +2,7 @@
 $image-path: "../../la-referencia/images";
 $dark-green: #137752;
 /* Bootstrap variables as well */
-$primary: #0045a1;
+$primary: #3a5180;
 $navbar-dark-color: white;
 $grid-gutter-width: 20px;
 
@@ -14,10 +14,11 @@ $grid-gutter-width: 20px;
 
 /* Change specific styles below */
 body {
+  font-family: 'Titilium', sans-serif;
   padding-inline: 1rem;
   font-size: 14px;
   color: #333;
-  background-color: #5ab48a;
+  background-color: #3a518019;
 }
 
 header {
@@ -37,29 +38,72 @@ header {
 .container {
   padding-inline: 2rem;
   border-inline: 2px solid $dark-green;
-  background-color: #fff;
+  background-color: transparent;
   border-radius: 0;
+  max-width: 1600px;
+}
+.container, .footer {
+  border: none;
+}
+
+.search-header > a {
+  margin-top: 6px;
+  margin-right: 10px;
+  text-decoration: none;
+}
+.pager {
+  justify-content: start;
+}
+.result {
+  margin-bottom: 1rem;
+}
+
+.facet, .facet-group .title {
+  padding: .7rem;
+  color: $primary;
+}
+.facet-group, .result {
+  background-color: #fff;
+  border-radius: 8px;
+}
+
+.facet-group .facet {
+  border: none;
+}
+
+
+.facet-group .collapse, .facet-group .title {
+  border: none;
+}
+
+.main-link, .result .title {
+  text-decoration: none;
+}
+
+.form-control, .form-select {
+  border: none;
 }
 
 footer .container {
   border-bottom: 2px solid #137752;
 }
-
 .alert {
   padding: 8px;
 }
 
 /* Fix breadcrumbs margins */
-.breadcrumbs {
-  .container {
-    background-color: $breadcrumb-bg;
-  }
+// .breadcrumbs {
+//   .container {
+//     // background-color: $breadcrumb-bg;
+//     padding: 0;
 
-  .breadcrumb {
-    margin: 0;
-    padding-inline: 0;
-  }
-}
+//   }
+
+//   .breadcrumb {
+//     margin: 0;
+//     padding-inline: 0;
+//   }
+// }
 
 .searchForm .searchForm-query #searchForm-reset {
   aspect-ratio: 1;
@@ -68,3 +112,4 @@ footer .container {
   line-height: 1;
   box-shadow: 0 0 0 1px rgb(0 0 0 / 0.2);
 }
+
