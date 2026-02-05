@@ -223,6 +223,7 @@ $config = [
             'VuFind\Controller\RecordsController' => 'VuFind\Controller\AbstractBaseFactory',
             'VuFind\Controller\RelaisController' => 'VuFind\Controller\AbstractBaseFactory',
             'VuFind\Controller\SearchController' => 'VuFind\Controller\AbstractBaseFactory',
+            'VuFind\Controller\SemanticSearchController' => 'VuFind\Controller\AbstractBaseFactory',
             'VuFind\Controller\ShibbolethLogoutNotificationController' => 'VuFind\Controller\AbstractBaseFactory',
             'VuFind\Controller\ShortlinkController' => 'VuFind\Controller\AbstractBaseWithConfigFactory',
             'VuFind\Controller\SimulatedSSOController' => 'VuFind\Controller\AbstractBaseFactory',
@@ -353,6 +354,8 @@ $config = [
             'relais' => 'VuFind\Controller\RelaisController',
             'Search' => 'VuFind\Controller\SearchController',
             'search' => 'VuFind\Controller\SearchController',
+            'SemanticSearch' => 'VuFind\Controller\SemanticSearchController',
+            'semanticsearch' => 'VuFind\Controller\SemanticSearchController',
             'ShibbolethLogoutNotification' => 'VuFind\Controller\ShibbolethLogoutNotificationController',
             'shibbolethlogoutnotification' => 'VuFind\Controller\ShibbolethLogoutNotificationController',
             'Shortlink' => 'VuFind\Controller\ShortlinkController',
@@ -821,6 +824,7 @@ $recordRoutes = [
     'search2record' => 'Search2Record',
     'search2collection' => 'Search2Collection',
     'search2collectionrecord' => 'Search2Record',
+    'semanticsearchrecord' => 'Record',
     // For backward compatibility with pre-9.0 versions:
     'legacy-solrauthrecord' => 'Authority',
 ];
@@ -1014,6 +1018,8 @@ $staticRoutes = [
     'Search2/Home',
     'Search2/Results',
     'Search2/Versions',
+    'SemanticSearch/FacetList',
+    'SemanticSearch/Results',
     'SimulatedSSO/Login',
     'Summon/Advanced',
     'Summon/FacetList',

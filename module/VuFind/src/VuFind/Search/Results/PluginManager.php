@@ -68,6 +68,7 @@ class PluginManager extends \VuFind\ServiceManager\AbstractPluginManager
         'solrauthorfacets' => \VuFind\Search\SolrAuthorFacets\Results::class,
         'solrcollection' => \VuFind\Search\SolrCollection\Results::class,
         'solrreserves' => \VuFind\Search\SolrReserves\Results::class,
+        'semanticsearch' => \VuFind\Search\SemanticSearch\Results::class,
         'solrweb' => \VuFind\Search\SolrWeb\Results::class,
         'summon' => \VuFind\Search\Summon\Results::class,
         'tags' => \VuFind\Search\Tags\Results::class,
@@ -82,7 +83,7 @@ class PluginManager extends \VuFind\ServiceManager\AbstractPluginManager
      */
     protected $factories = [
         \VuFind\Search\Blender\Results::class
-            => \VuFind\Search\Solr\ResultsFactory::class,
+        => \VuFind\Search\Solr\ResultsFactory::class,
         \VuFind\Search\BrowZine\Results::class => ResultsFactory::class,
         \VuFind\Search\Combined\Results::class => ResultsFactory::class,
         \VuFind\Search\EDS\Results::class => ResultsFactory::class,
@@ -108,6 +109,7 @@ class PluginManager extends \VuFind\ServiceManager\AbstractPluginManager
         \VuFind\Search\SolrAuthorFacets\Results::class => ResultsFactory::class,
         \VuFind\Search\SolrCollection\Results::class => ResultsFactory::class,
         \VuFind\Search\SolrReserves\Results::class => ResultsFactory::class,
+        \VuFind\Search\SemanticSearch\Results::class => ResultsFactory::class,
         \VuFind\Search\SolrWeb\Results::class => ResultsFactory::class,
         \VuFind\Search\Summon\Results::class => ResultsFactory::class,
         \VuFind\Search\Tags\Results::class =>

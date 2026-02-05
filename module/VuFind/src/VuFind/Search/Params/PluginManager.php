@@ -67,6 +67,7 @@ class PluginManager extends \VuFind\ServiceManager\AbstractPluginManager
         'solrauthorfacets' => \VuFind\Search\SolrAuthorFacets\Params::class,
         'solrcollection' => \VuFind\Search\SolrCollection\Params::class,
         'solrreserves' => \VuFind\Search\SolrReserves\Params::class,
+        'semanticsearch' => \VuFind\Search\SemanticSearch\Params::class,
         'solrweb' => \VuFind\Search\SolrWeb\Params::class,
         'summon' => \VuFind\Search\Summon\Params::class,
         'tags' => \VuFind\Search\Tags\Params::class,
@@ -81,7 +82,7 @@ class PluginManager extends \VuFind\ServiceManager\AbstractPluginManager
      */
     protected $factories = [
         \VuFind\Search\Blender\Params::class
-            => \VuFind\Search\Blender\ParamsFactory::class,
+        => \VuFind\Search\Blender\ParamsFactory::class,
         \VuFind\Search\BrowZine\Params::class => ParamsFactory::class,
         \VuFind\Search\Combined\Params::class => ParamsFactory::class,
         \VuFind\Search\EDS\Params::class => ParamsFactory::class,
@@ -101,9 +102,10 @@ class PluginManager extends \VuFind\ServiceManager\AbstractPluginManager
             \VuFind\Search\Solr\ParamsFactory::class,
         \VuFind\Search\SolrAuth\Params::class => ParamsFactory::class,
         \VuFind\Search\SolrAuthor\Params::class => ParamsFactory::class,
-        \VuFind\Search\SolrAuthorFacets\Params::class =>  ParamsFactory::class,
+        \VuFind\Search\SolrAuthorFacets\Params::class => ParamsFactory::class,
         \VuFind\Search\SolrCollection\Params::class => ParamsFactory::class,
         \VuFind\Search\SolrReserves\Params::class => ParamsFactory::class,
+        \VuFind\Search\SemanticSearch\Params::class => ParamsFactory::class,
         \VuFind\Search\SolrWeb\Params::class => ParamsFactory::class,
         \VuFind\Search\Summon\Params::class => ParamsFactory::class,
         \VuFind\Search\Tags\Params::class => ParamsFactory::class,
