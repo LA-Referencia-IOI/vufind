@@ -49,6 +49,13 @@ class Backend extends SolrBackend
     protected $topK;
 
     /**
+     * Minimum score for k-NN search.
+     *
+     * @var float
+     */
+    protected $minScore;
+
+    /**
      * Constructor.
      *
      * @param Connector  $connector    SOLR connector
@@ -62,13 +69,15 @@ class Backend extends SolrBackend
         HttpClient $httpClient,
         $embeddingUrl,
         $vectorField,
-        $topK
+        $topK,
+        $minScore
     ) {
         parent::__construct($connector);
         $this->httpClient = $httpClient;
         $this->embeddingUrl = $embeddingUrl;
         $this->vectorField = $vectorField;
         $this->topK = $topK;
+        $this->minScore = $minScore;
     }
 
     /**
@@ -131,6 +140,7 @@ class Backend extends SolrBackend
         // and also clear edismax-specific parameters that might conflict with k-NN
         if ($semanticQuery) {
             $params->set('q', $semanticQuery);
+            $params->add('fq', '{!frange l=' . $this->minScore . '}query($q)');
             $params->remove('qf');
             $params->remove('qt');
             $params->remove('mm');

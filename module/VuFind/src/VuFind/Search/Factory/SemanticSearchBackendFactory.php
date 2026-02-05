@@ -90,6 +90,7 @@ class SemanticSearchBackendFactory extends AbstractSolrBackendFactory
         $embeddingUrl = $semanticConfig->embedding_api_url ?? 'http://localhost:8000/embed';
         $vectorField = $semanticConfig->vector_field ?? 'vector';
         $topK = $semanticConfig->topK ?? 10;
+        $minScore = $semanticConfig->min_score ?? 0.7;
 
         $httpClient = $this->getService('VuFindHttp\HttpService')->createClient();
 
@@ -98,7 +99,8 @@ class SemanticSearchBackendFactory extends AbstractSolrBackendFactory
             $httpClient,
             $embeddingUrl,
             $vectorField,
-            $topK
+            $topK,
+            $minScore
         );
 
         $pageSize = $this->getIndexConfig('record_batch_size', 100);
