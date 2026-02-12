@@ -1,0 +1,74 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: docker/vufind/Dockerfile
+    container_name: vufind-web
+    depends_on:
+      - db
+      - solr
+    environment:
+      VUFIND_LOCAL_DIR: /usr/local/vufind/local/docker
+      VUFIND_BASEPATH: /
+      VUFIND_SITE_URL: http://localhost:8080
+      VUFIND_THEME: ${VUFIND_THEME:-bootstrap5}
+      VUFIND_NOILS_MODE: ils-none
+      VUFIND_DB_HOST: db
+      VUFIND_DB_PORT: 3306
+      VUFIND_DB_NAME: vufind
+      VUFIND_DB_USER: vufind
+      VUFIND_DB_PASSWORD: vufind
+      VUFIND_DB_ROOT_USER: root
+      VUFIND_DB_ROOT_PASSWORD: root
+      VUFIND_SOLR_URL: http://solr:8983/solr
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/usr/local/vufind
+      - vufind_vendor:/usr/local/vufind/vendor
+    restart: unless-stopped
+
+  db:
+    image: mariadb:11.4
+    container_name: vufind-db
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+    ports:
+      - "3307:3306"
+    volumes:
+      - vufind_mariadb:/var/lib/mysql
+    restart: unless-stopped
+
+  solr:
+    build:
+      context: .
+      dockerfile: docker/solr/Dockerfile
+    container_name: vufind-solr
+    ports:
+      - "8983:8983"
+    volumes:
+      - vufind_solr:/var/solr/data
+    restart: unless-stopped
+
+  scss-watch:
+    image: node:20-alpine
+    container_name: vufind-scss-watch
+    working_dir: /usr/local/vufind
+    command: >
+      sh -lc '
+      if [ ! -d node_modules/grunt ]; then npm install --no-audit; fi &&
+      npm run watch:scss
+      '
+    volumes:
+      - .:/usr/local/vufind
+      - vufind_node_modules:/usr/local/vufind/node_modules
+      - vufind_bootstrap5_node_modules:/usr/local/vufind/themes/bootstrap5/node_modules
+    restart: unless-stopped
+
+volumes:
+  vufind_vendor:
+  vufind_node_modules:
+  vufind_bootstrap5_node_modules:
+  vufind_mariadb:
+  vufind_solr:

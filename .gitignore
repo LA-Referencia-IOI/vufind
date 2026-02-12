@@ -29,6 +29,9 @@ public/swagger-ui
 tests/phpcs.cache.json
 themes/bootstrap5/scss/vendor/bootstrap
 local/DirLocations.ini
+local/docker/
 local/config/vufind.bak
 local/config/vufind/*
 !local/config/vufind/README.txt
+.DS_Store
+.obsidian/*
