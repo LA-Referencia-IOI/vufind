@@ -231,3 +231,15 @@ The new **SemanticSearch** data source extends VuFind with full **vector-based s
 It integrates seamlessly into VuFind’s modular backend architecture, enabling hybrid or semantic search interfaces with Solr’s `DenseVectorField`.
 
 This implementation strictly follows VuFind’s **“Connecting a New External Data Source”** documentation while adding modern AI-based search functionality.
+
+## References
+- https://vufind.org/wiki/development:howtos:connecting_a_new_external_data_source
+- https://solr.apache.org/guide/solr/latest/query-guide/dense-vector-search.html
+- [Performance Tuning Apache Solr for Dense Vectors](https://www.youtube.com/watch?v=cDiCX3mVAlQ)
+  - Reduce CPU ops
+    - Pre-normalize + use dot product similarity ✔️
+    - Use aggressive merge policy 
+    - Use Java 21 with Project Panama vector module ✔️
+      - ` ./solr.sh start  -a "--add-modules jdk.incubator.vector"`
+  - Reduce index size
+    - Use non-stored vector fields ✔️
