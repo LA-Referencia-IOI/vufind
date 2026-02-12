@@ -201,7 +201,7 @@ ajax = true
 
 ---
 
-## 8. 🔁 Execution Flow (High-Level)
+## 8. Execution Flow (High-Level)
 
 ```mermaid
 sequenceDiagram
@@ -225,7 +225,7 @@ sequenceDiagram
 
 ---
 
-## ✅ Conclusion
+## Conclusion
 
 The new **SemanticSearch** data source extends VuFind with full **vector-based semantic retrieval** capabilities.  
 It integrates seamlessly into VuFind’s modular backend architecture, enabling hybrid or semantic search interfaces with Solr’s `DenseVectorField`.
