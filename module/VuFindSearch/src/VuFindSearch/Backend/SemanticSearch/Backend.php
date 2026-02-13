@@ -54,6 +54,26 @@ class Backend extends SolrBackend
      * @var float
      */
     protected $minScore;
+    /**
+     * Embedding Model.
+     *
+     * @var string
+     */
+    protected $model;
+
+    /**
+     * Encoding Format.
+     *
+     * @var string
+     */
+    protected $encodingFormat;
+
+    /**
+     * User Identifier.
+     *
+     * @var string
+     */
+    protected $user;
 
     /**
      * Constructor.
@@ -70,7 +90,10 @@ class Backend extends SolrBackend
         $embeddingUrl,
         $vectorField,
         $topK,
-        $minScore
+        $minScore,
+        $model = 'sentence-transformers/paraphrase-multilingual-mpnet-base-v2',
+        $encodingFormat = 'float',
+        $user = 'user_123'
     ) {
         parent::__construct($connector);
         $this->httpClient = $httpClient;
@@ -78,6 +101,9 @@ class Backend extends SolrBackend
         $this->vectorField = $vectorField;
         $this->topK = $topK;
         $this->minScore = $minScore;
+        $this->model = $model;
+        $this->encodingFormat = $encodingFormat;
+        $this->user = $user;
     }
 
     /**
@@ -112,14 +138,21 @@ class Backend extends SolrBackend
             try {
                 $this->httpClient->setUri($this->embeddingUrl);
                 $this->httpClient->setMethod('POST');
-                $this->httpClient->setRawBody(json_encode(['text' => $lookFor]));
+                $payload = [
+                    'input'           => $lookFor,
+                    'model'           => $this->model,
+                    'encoding_format' => $this->encodingFormat,
+                    'user'            => $this->user
+                ];
+                $this->httpClient->setRawBody(json_encode($payload));
                 $this->httpClient->setHeaders(['Content-Type' => 'application/json']);
 
                 $response = $this->httpClient->send();
                 if ($response->isSuccess()) {
                     $data = json_decode($response->getBody(), true);
-                    if (isset($data['embedding'])) {
-                        $vectorString = '[' . implode(',', $data['embedding']) . ']';
+                    if (!empty($data['data']) && isset($data['data'][0]['embedding'])) {
+                        $embeddingArray = $data['data'][0]['embedding'];
+                        $vectorString = '[' . implode(',', $embeddingArray) . ']';
                         $semanticQuery = sprintf(
                             '{!knn f=%s topK=%d}%s',
                             $this->vectorField,
