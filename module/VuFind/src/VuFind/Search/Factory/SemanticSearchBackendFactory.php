@@ -69,7 +69,7 @@ class SemanticSearchBackendFactory extends AbstractSolrBackendFactory
     public function __invoke(ContainerInterface $sm, $name, ?array $options = null)
     {
         $this->setup($sm);
-        $config = $this->getService(ConfigManagerInterface::class)->getConfigObject('config');
+        $config = $this->getService(ConfigManagerInterface::class)->getConfigObject('semanticsearch');
         if (isset($config->SemanticSearch->default_core)) {
             $this->defaultIndexName = $config->SemanticSearch->default_core;
         }
@@ -85,12 +85,15 @@ class SemanticSearchBackendFactory extends AbstractSolrBackendFactory
      */
     protected function createBackend(Connector $connector)
     {
-        $config = $this->getService(ConfigManagerInterface::class)->getConfigObject('config');
+        $config = $this->getService(ConfigManagerInterface::class)->getConfigObject('semanticsearch');
         $semanticConfig = $config->SemanticSearch ?? new \VuFind\Config\Config();
         $embeddingUrl = $semanticConfig->embedding_api_url ?? 'http://localhost:8000/embed';
         $vectorField = $semanticConfig->vector_field ?? 'vector';
         $topK = $semanticConfig->topK ?? 10;
         $minScore = $semanticConfig->min_score ?? 0.7;
+        $model = $semanticConfig->model ?? 'sentence-transformers/paraphrase-multilingual-mpnet-base-v2';
+        $encodingFormat = $semanticConfig->encoding_format ?? 'float';
+        $user = $semanticConfig->user ?? 'user_123';
 
         $httpClient = $this->getService('VuFindHttp\HttpService')->createClient();
 
@@ -100,7 +103,10 @@ class SemanticSearchBackendFactory extends AbstractSolrBackendFactory
             $embeddingUrl,
             $vectorField,
             $topK,
-            $minScore
+            $minScore,
+            $model,
+            $encodingFormat,
+            $user
         );
 
         $pageSize = $this->getIndexConfig('record_batch_size', 100);
