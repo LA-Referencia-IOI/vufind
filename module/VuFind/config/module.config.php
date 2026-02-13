@@ -432,6 +432,7 @@ $config = [
         'factories' => [
             'League\CommonMark\MarkdownConverter' => 'VuFind\Service\MarkdownFactory',
             'VuFind\Account\UserAccountService' => 'VuFind\Account\UserAccountServiceFactory',
+            'VuFind\Service\SemanticSearch\EmbeddingService' => 'VuFind\Service\SemanticSearch\EmbeddingServiceFactory',
             'VuFind\AjaxHandler\PluginManager' => 'VuFind\ServiceManager\AbstractPluginManagerFactory',
             'VuFind\DeveloperSettings\DeveloperSettingsService' => 'VuFind\DeveloperSettings\DeveloperSettingsServiceFactory',
             'VuFind\Auth\EmailAuthenticator' => 'VuFind\Auth\EmailAuthenticatorFactory',
