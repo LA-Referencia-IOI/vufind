@@ -104,17 +104,17 @@ class SemanticSimilar implements RelatedInterface
      * @return array
      */
     public function getResults()
+
     {
-        // 1. Get the title from the current record
+
         $title = $this->driver->getTitle();
         if (empty($title)) {
             return [];
         }
 
-        // 2. Perform search using rawJsonSearch which handles embedding and semantic query construction
         try {
             // We pass the title as a simple query string.
-            // rawJsonSearch will detect it's not a KNN query and call the embedding API.
+            // rawJsonSearch (called by search) will detect it's not a KNN query and call the embedding API.
             $queryObject = new \VuFindSearch\Query\Query($title);
 
             // Set params to exclude self
@@ -122,13 +122,9 @@ class SemanticSimilar implements RelatedInterface
                 'fq' => '-id:"' . $this->driver->getUniqueId() . '"'
             ]);
 
-            // rawJsonSearch signature: (AbstractQuery $query, $offset, $limit, ?ParamBag $params = null)
-            $json = $this->backend->rawJsonSearch($queryObject, 0, $this->topK, $params);
-            $response = json_decode($json, true);
-            $collection = $this->backend->getRecordCollectionFactory()->factory($response);
-            return $collection->getRecords();
+            return $this->backend->search($queryObject, 0, $this->topK, $params)->getRecords();
         } catch (\Exception $e) {
-            // Log error?
+            error_log('Unexpected error in Semantic Similar records module: ' . ((string)$e));
             return [];
         }
     }
