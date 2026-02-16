@@ -135,34 +135,15 @@ class Backend extends SolrBackend
 
         $semanticQuery = null;
         if (!empty($lookFor) && !str_starts_with($lookFor, '{!knn')) {
-            try {
-                $this->httpClient->setUri($this->embeddingUrl);
-                $this->httpClient->setMethod('POST');
-                $payload = [
-                    'input'           => $lookFor,
-                    'model'           => $this->model,
-                    'encoding_format' => $this->encodingFormat,
-                    'user'            => $this->user
-                ];
-                $this->httpClient->setRawBody(json_encode($payload));
-                $this->httpClient->setHeaders(['Content-Type' => 'application/json']);
-
-                $response = $this->httpClient->send();
-                if ($response->isSuccess()) {
-                    $data = json_decode($response->getBody(), true);
-                    if (!empty($data['data']) && isset($data['data'][0]['embedding'])) {
-                        $embeddingArray = $data['data'][0]['embedding'];
-                        $vectorString = '[' . implode(',', $embeddingArray) . ']';
-                        $semanticQuery = sprintf(
-                            '{!knn f=%s topK=%d}%s',
-                            $this->vectorField,
-                            (int)($this->topK ?? 10),
-                            $vectorString
-                        );
-                    }
-                }
-            } catch (\Exception $e) {
-                $this->log('error', 'Error calling embedding API: ' . $e->getMessage());
+            $embeddingArray = $this->getEmbedding($lookFor);
+            if ($embeddingArray) {
+                $vectorString = '[' . implode(',', $embeddingArray) . ']';
+                $semanticQuery = sprintf(
+                    '{!knn f=%s topK=%d}%s',
+                    $this->vectorField,
+                    (int)($this->topK ?? 10),
+                    $vectorString
+                );
             }
         }
 
@@ -190,5 +171,38 @@ class Backend extends SolrBackend
         }
 
         return $this->connector->search($params);
+    }
+    /**
+     * Get embedding vector for text.
+     *
+     * @param string $text Text to embed
+     *
+     * @return ?array
+     */
+    public function getEmbedding(string $text): ?array
+    {
+        try {
+            $this->httpClient->setUri($this->embeddingUrl);
+            $this->httpClient->setMethod('POST');
+            $payload = [
+                'input'           => $text,
+                'model'           => $this->model,
+                'encoding_format' => $this->encodingFormat,
+                'user'            => $this->user
+            ];
+            $this->httpClient->setRawBody(json_encode($payload));
+            $this->httpClient->setHeaders(['Content-Type' => 'application/json']);
+
+            $response = $this->httpClient->send();
+            if ($response->isSuccess()) {
+                $data = json_decode($response->getBody(), true);
+                if (!empty($data['data']) && isset($data['data'][0]['embedding'])) {
+                    return $data['data'][0]['embedding'];
+                }
+            }
+        } catch (\Exception $e) {
+            $this->log('error', 'Error calling embedding API: ' . $e->getMessage());
+        }
+        return null;
     }
 }
