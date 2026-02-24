@@ -139,9 +139,9 @@ class Backend extends SolrBackend
             if ($embeddingArray) {
                 $vectorString = '[' . implode(',', $embeddingArray) . ']';
                 $semanticQuery = sprintf(
-                    '{!knn f=%s topK=%d}%s',
+                    '{!vectorSimilarity f=%s minReturn=%f}%s',
                     $this->vectorField,
-                    (int)($this->topK ?? 10),
+                    $this->minScore,
                     $vectorString
                 );
             }
@@ -154,7 +154,6 @@ class Backend extends SolrBackend
         // and also clear edismax-specific parameters that might conflict with k-NN
         if ($semanticQuery) {
             $params->set('q', $semanticQuery);
-            $params->add('fq', '{!frange l=' . $this->minScore . '}query($q)');
             $params->remove('qf');
             $params->remove('qt');
             $params->remove('mm');
