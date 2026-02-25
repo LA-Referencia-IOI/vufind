@@ -8,7 +8,7 @@ Solr Schema Preparation (`schema.xml`). For Solr to handle dense vectors, we mus
 
 - New Field Type: `knn_vector`
 
-A field type for *k-Nearest Neighbors* (k-NN) vector search.
+A field type for _k-Nearest Neighbors_ (k-NN) vector search.
 
 ```xml
 <fieldType name="knn_vector" class="solr.DenseVectorField"
@@ -16,7 +16,7 @@ A field type for *k-Nearest Neighbors* (k-NN) vector search.
            similarityFunction="dot_product"/>
 ```
 
-- **`vectorDimension="768"`** — Must match the embedding model dimension.  
+- **`vectorDimension="768"`** — Must match the embedding model dimension.
 - **`similarityFunction="dot_product"`** — Defines how similarity between vectors is computed.
 
 - New Field: `vector`
@@ -65,14 +65,15 @@ group[] = false
 
 ### 1.3 `config.ini`
 
-
 To set Semantic Search as the default search experience, change the `defaultModule` setting in `config.ini`:
 
 ```ini
 defaultModule   = SemanticSearch
 ```
 
-*(Optional: Combined Search)*
+### 1.4 `combined.ini`
+
+_(Optional: Combined Search)_
 If you prefer to use combined search, set `defaultModule = Combined` in `config.ini`, and add the semantic search block to `local/config/vufind/combined.ini`:
 
 ```ini
@@ -83,6 +84,7 @@ more_link = "More semantic results"
 limit = 10
 ajax = true
 ```
+
 > **Note:** Remember to remove any unused data source configurations from `combined.ini` (e.g., `[Summon]` or `[EDS]`) to avoid unnecessary requests.
 
 ---
