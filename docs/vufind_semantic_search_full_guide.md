@@ -116,6 +116,20 @@ New templates were added under the **Bootstrap 5 theme** to render semantic resu
 
 ## 6. Configuration files
 
+- `semanticsearch.ini` fill the following with valid values:
+
+```ini
+[SemanticSearch]
+embedding_api_url = "http://localhost:8000/v1/embeddings"
+vector_field      = "vector"
+topK              = 1000
+default_core      = "biblio"
+min_score         = 0.0
+model             = "embaas/sentence-transformers-multilingual-e5-large"
+encoding_format   = "float"
+user              = "user_example"
+```
+
 - `searchbox.ini` add:
 
 ```ini
@@ -155,6 +169,16 @@ ajax = true
 ```
 
 * Remove from `combined.ini` the section of data sources configs that are unused, like `[Summon]` and `[EDS]`.
+
+
+
+- `config.ini` add `related[] = "SemanticSimilar"` in `[Record]` section to enable the semantic similar items in the record detail page:
+
+```ini
+related[] = "Similar"
+related[] = "SemanticSimilar"
+```
+
 
 
 ---
