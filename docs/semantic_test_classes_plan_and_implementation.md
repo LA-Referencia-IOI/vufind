@@ -203,3 +203,24 @@ This update added new unit test coverage for the semantic search/similarity feat
   - `Laminas\Http\Response`
   - `VuFindSearch\Backend\Solr\QueryBuilder`
 
+### 4 Run tests
+- Only semantic tests
+```
+vendor/bin/phpunit -c module/VuFind/tests/phpunit.xml \
+  module/VuFind/tests/unit-tests/src/VuFindTest/Related/SemanticSimilarTest.php \
+  module/VuFind/tests/unit-tests/src/VuFindTest/Related/SemanticSimilarFactoryTest.php \
+  module/VuFind/tests/unit-tests/src/VuFindTest/RecordDriver/SemanticSearchTest.php \
+  module/VuFind/tests/unit-tests/src/VuFindTest/RecordDriver/SemanticSearchFactoryTest.php \
+  module/VuFind/tests/unit-tests/src/VuFindTest/Search/SemanticSearch/OptionsTest.php \
+  module/VuFind/tests/unit-tests/src/VuFindTest/Search/SemanticSearch/ParamsTest.php \
+  module/VuFind/tests/unit-tests/src/VuFindTest/Search/SemanticSearch/ResultsTest.php \
+  module/VuFind/tests/unit-tests/src/VuFindTest/Search/Factory/SemanticSearchBackendFactoryTest.php \
+  module/VuFind/tests/unit-tests/src/VuFindTest/Service/SemanticSearch/EmbeddingServiceTest.php \
+  module/VuFind/tests/unit-tests/src/VuFindTest/Service/SemanticSearch/EmbeddingServiceFactoryTest.php \
+  module/VuFind/tests/unit-tests/src/VuFindTest/Controller/SemanticSearchControllerTest.php \
+  module/VuFind/tests/unit-tests/src/VuFindTest/Controller/SemanticSearchRecordControllerTest.php
+```
+- All tests
+```
+vendor/bin/phing phpunit  
+```
