@@ -131,7 +131,7 @@ class Connector implements \Psr\Log\LoggerAwareInterface
         $this->map = $map;
         $this->uniqueKey = $uniqueKey;
         $this->clientFactory = $cf instanceof HttpClient
-            ? fn () => clone $cf
+            ? fn() => clone $cf
             : $cf;
     }
 
@@ -243,11 +243,45 @@ class Connector implements \Psr\Log\LoggerAwareInterface
      *
      * @return string
      */
+    /**
+     * Execute a search.
+     *
+     * @param ParamBag $params Parameters
+     *
+     * @return string
+     */
     public function search(ParamBag $params)
     {
         $handler = $this->map->getHandler(__FUNCTION__);
         $this->map->prepare(__FUNCTION__, $params);
         return $this->query($handler, $params, true);
+    }
+
+    /**
+     * Send a POST request with JSON body.
+     *
+     * @param string    $handler SOLR request handler to use
+     * @param string    $json    JSON body
+     * @param ?ParamBag $params  Additional parameters
+     *
+     * @return string Response body
+     */
+    public function postJson(string $handler, string $json, ?ParamBag $params = null)
+    {
+        $params = $params ?: new ParamBag();
+        $urlSuffix = '/' . $handler;
+        if (count($params) > 0) {
+            $urlSuffix .= '?' . implode('&', $params->request());
+        }
+
+        $callback = function ($client) use ($json): void {
+            $client->setRawBody($json);
+            $client->setEncType('application/json');
+            $client->getRequest()->getHeaders()
+                ->addHeaderLine('Content-Length', strlen($json));
+        };
+
+        return $this->trySolrUrls(Request::METHOD_POST, $urlSuffix, $callback);
     }
 
     /**
