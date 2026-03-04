@@ -104,7 +104,10 @@ class Backend extends SemanticBackend
             return parent::rawJsonSearch($query, $offset, $limit, $params);
         }
 
+        $startTime = microtime(true);
         $embeddingArray = $this->getEmbedding($lookFor);
+        $this->log('debug', sprintf('Embedding retrieval time: %.4f seconds', microtime(true) - $startTime));
+
         if (!$embeddingArray) {
             return parent::rawJsonSearch($query, $offset, $limit, $params);
         }
@@ -169,6 +172,10 @@ class Backend extends SemanticBackend
             $combinedQuery['filter'] = $fq;
         }
 
-        return $this->connector->postJson('combined', json_encode($combinedQuery), $params);
+        $startTime = microtime(true);
+        $response = $this->connector->postJson('combined', json_encode($combinedQuery), $params);
+        $this->log('debug', sprintf('Solr combined search time: %.4f seconds', microtime(true) - $startTime));
+
+        return $response;
     }
 }

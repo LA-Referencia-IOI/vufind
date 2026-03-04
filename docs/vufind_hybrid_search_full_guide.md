@@ -45,6 +45,7 @@ The implementation involved creating a new independent data source, configuring 
     - Fixed **400 error** by adding default field (`df`) support in Solr.
     - Fixed **500 error** by disabling highlighting when RRF is active (handling current Solr limitations).
 - **Full Integration**: Works with VuFind's core plugin system, including breadcrumbs and facets.
+- **Performance Logging**: Measures and logs the duration of embedding API requests and Solr combined query requests (visible in VuFind debug logs).
 
 ## Verification
 1. Navigate to `/HybridSearch/Results?lookfor=your+query`.
