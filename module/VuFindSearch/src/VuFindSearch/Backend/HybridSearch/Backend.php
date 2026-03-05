@@ -2,6 +2,7 @@
 
 namespace VuFindSearch\Backend\HybridSearch;
 
+use VuFindSearch\Backend\Exception\BackendException;
 use VuFindSearch\Backend\SemanticSearch\Backend as SemanticBackend;
 use VuFindSearch\ParamBag;
 use VuFind\Service\SemanticSearch\EmbeddingService;
@@ -100,7 +101,7 @@ class Backend extends SemanticBackend
         $this->log('debug', sprintf('HybridSearch: Embedding retrieval time: %.4f seconds', microtime(true) - $startTime));
 
         if (!$embeddingArray) {
-            return null;
+            throw new BackendException('Problem connecting to Embedding API.');
         }
 
         // Build lexical parameters to get correct q/filters

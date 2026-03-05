@@ -2,7 +2,7 @@
 
 namespace VuFindSearch\Backend\SemanticSearch;
 
-use Laminas\Http\Client as HttpClient;
+use VuFindSearch\Backend\Exception\BackendException;
 use VuFindSearch\Backend\Solr\Backend as SolrBackend;
 use VuFindSearch\Backend\Solr\Connector;
 use VuFindSearch\ParamBag;
@@ -99,7 +99,7 @@ class Backend extends SolrBackend
         $this->log('debug', sprintf('SemanticSearch: Embedding retrieval time: %.4f seconds', microtime(true) - $startTime));
 
         if (!$embeddingArray) {
-            return null;
+            throw new BackendException('Problem connecting to Embedding API.');
         }
 
         $vectorString = '[' . implode(',', $embeddingArray) . ']';
