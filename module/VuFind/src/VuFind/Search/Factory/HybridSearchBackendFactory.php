@@ -40,9 +40,9 @@ class HybridSearchBackendFactory extends AbstractSolrBackendFactory
     public function __invoke(ContainerInterface $sm, $name, ?array $options = null)
     {
         $this->setup($sm);
-        $config = $this->getService(ConfigManagerInterface::class)->getConfigObject('hybridsearch');
-        if (isset($config->HybridSearch->default_core)) {
-            $this->defaultIndexName = $config->HybridSearch->default_core;
+        $config = $this->getService(ConfigManagerInterface::class)->getConfigObject('embedding');
+        if (isset($config->Embedding->default_core)) {
+            $this->defaultIndexName = $config->Embedding->default_core;
         }
         return parent::__invoke($sm, $name, $options);
     }
@@ -56,8 +56,8 @@ class HybridSearchBackendFactory extends AbstractSolrBackendFactory
      */
     protected function createBackend(Connector $connector)
     {
-        $config = $this->getService(ConfigManagerInterface::class)->getConfigObject('hybridsearch');
-        $hybridConfig = $config->HybridSearch ?? new \VuFind\Config\Config();
+        $config = $this->getService(ConfigManagerInterface::class)->getConfigObject('embedding');
+        $hybridConfig = $config->Embedding ?? new \VuFind\Config\Config();
         $embeddingUrl = $hybridConfig->embedding_api_url ?? 'http://localhost:8000/embed';
         $vectorField = $hybridConfig->vector_field ?? 'vector';
         $topK = $hybridConfig->topK ?? 10;

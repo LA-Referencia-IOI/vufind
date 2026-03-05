@@ -69,9 +69,9 @@ class SemanticSearchBackendFactory extends AbstractSolrBackendFactory
     public function __invoke(ContainerInterface $sm, $name, ?array $options = null)
     {
         $this->setup($sm);
-        $config = $this->getService(ConfigManagerInterface::class)->getConfigObject('semanticsearch');
-        if (isset($config->SemanticSearch->default_core)) {
-            $this->defaultIndexName = $config->SemanticSearch->default_core;
+        $config = $this->getService(ConfigManagerInterface::class)->getConfigObject('embedding');
+        if (isset($config->Embedding->default_core)) {
+            $this->defaultIndexName = $config->Embedding->default_core;
         }
         return parent::__invoke($sm, $name, $options);
     }
@@ -85,8 +85,8 @@ class SemanticSearchBackendFactory extends AbstractSolrBackendFactory
      */
     protected function createBackend(Connector $connector)
     {
-        $config = $this->getService(ConfigManagerInterface::class)->getConfigObject('semanticsearch');
-        $semanticConfig = $config->SemanticSearch ?? new \VuFind\Config\Config();
+        $config = $this->getService(ConfigManagerInterface::class)->getConfigObject('embedding');
+        $semanticConfig = $config->Embedding ?? new \VuFind\Config\Config();
         $embeddingUrl = $semanticConfig->embedding_api_url ?? 'http://localhost:8000/embed';
         $vectorField = $semanticConfig->vector_field ?? 'vector';
         $topK = $semanticConfig->topK ?? 10;

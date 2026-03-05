@@ -133,20 +133,26 @@ class Backend extends SolrBackend
             $lookFor = $query->getString();
         }
 
-        $semanticQuery = null;
+        if (empty($lookFor)) {
+            return parent::rawJsonSearch($query, $offset, $limit, $params);
+        }
+
+
         $startTime = microtime(true);
         $embeddingArray = $this->getEmbedding($lookFor);
         $this->log('debug', sprintf('SemanticSearch: Embedding retrieval time: %.4f seconds', microtime(true) - $startTime));
 
-        if ($embeddingArray) {
-            $vectorString = '[' . implode(',', $embeddingArray) . ']';
-            $semanticQuery = sprintf(
-                '{!vectorSimilarity f=%s minReturn=%f}%s',
-                $this->vectorField,
-                $this->minScore,
-                $vectorString
-            );
+        if (!$embeddingArray) {
+            return null;
         }
+
+        $vectorString = '[' . implode(',', $embeddingArray) . ']';
+        $semanticQuery = sprintf(
+            '{!vectorSimilarity f=%s minReturn=%f}%s',
+            $this->vectorField,
+            $this->minScore,
+            $vectorString
+        );
 
         // Build standard parameters
         $params->mergeWith($this->getQueryBuilder()->build($query, $params));
