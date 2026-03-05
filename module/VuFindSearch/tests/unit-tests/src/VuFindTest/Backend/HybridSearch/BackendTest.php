@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Unit tests for SemanticSearch backend.
+ * Unit tests for HybridSearch backend.
  *
  * PHP version 8
  *
@@ -15,12 +15,10 @@ namespace VuFind\Log {
     }
 }
 
-namespace VuFindTest\Backend\SemanticSearch {
+namespace VuFindTest\Backend\HybridSearch {
 
-    use Laminas\Http\Client as HttpClient;
-    use Laminas\Http\Response;
     use PHPUnit\Framework\TestCase;
-    use VuFindSearch\Backend\SemanticSearch\Backend;
+    use VuFindSearch\Backend\HybridSearch\Backend;
     use VuFindSearch\Backend\Solr\Connector;
     use VuFind\Service\SemanticSearch\EmbeddingService;
     use VuFindSearch\Backend\Solr\QueryBuilder;
@@ -28,7 +26,7 @@ namespace VuFindTest\Backend\SemanticSearch {
     use VuFindSearch\Query\Query;
 
     /**
-     * Unit tests for SemanticSearch backend.
+     * Unit tests for HybridSearch backend.
      *
      * @category VuFind
      * @package  Search
@@ -36,27 +34,34 @@ namespace VuFindTest\Backend\SemanticSearch {
     class BackendTest extends TestCase
     {
         /**
-         * Test semantic raw search query generation when embedding is available.
+         * Test hybrid search query generation when embedding is available.
          *
          * @return void
          */
-        public function testRawJsonSearchBuildsVectorQuery(): void
+        public function testRawJsonSearchBuildsCombinedQuery(): void
         {
             $connector = $this->createMock(Connector::class);
-            $connector->expects($this->once())->method('search')
+            $connector->expects($this->once())->method('postJson')
                 ->with(
+                    $this->equalTo('combined'),
+                    $this->callback(function ($json) {
+                        $data = json_decode($json, true);
+                        return isset($data['queries']['lexical']['lucene']['query'])
+                            && $data['queries']['lexical']['lucene']['query'] === 'title:foo'
+                            && isset($data['queries']['vector']['knn']['query'])
+                            && str_contains($data['queries']['vector']['knn']['query'], '[0.11,0.22]')
+                            && $data['queries']['vector']['knn']['f'] === 'my_vector'
+                            && $data['queries']['vector']['knn']['topK'] === 10
+                            && $data['params']['combiner'] === true
+                            && $data['params']['combiner.algorithm'] === 'rrf'
+                            && $data['params']['combiner.rrf.k'] === 60
+                            && $data['limit'] === 10
+                            && $data['offset'] === 5
+                            && str_contains($data['fields'], 'score');
+                    }),
                     $this->callback(function ($params) {
-                        $q = $params->get('q');
                         return $params instanceof ParamBag
-                            && $params->get('rows') === [10]
-                            && $params->get('start') === [5]
-                            && !empty($q[0])
-                            && str_contains($q[0], '{!vectorSimilarity f=my_vector minReturn=0.700000}')
-                            && !empty($params->get('fl'))
-                            && str_contains(implode(',', $params->get('fl')), 'score')
-                            && null === $params->get('qf')
-                            && null === $params->get('qt')
-                            && null === $params->get('mm');
+                            && $params->get('hl') === ['false'];
                     })
                 )
                 ->willReturn('{}');
@@ -68,7 +73,7 @@ namespace VuFindTest\Backend\SemanticSearch {
 
             $queryBuilder = $this->createMock(QueryBuilder::class);
             $queryBuilder->method('build')
-                ->willReturn(new ParamBag(['q' => 'title:foo', 'qf' => 'title^2', 'qt' => 'edismax', 'mm' => '1<75%']));
+                ->willReturn(new ParamBag(['q' => 'title:foo', 'qf' => 'title^2']));
 
             $backend = new Backend($connector, $embeddingService, 'my_vector', 0.7);
             $backend->setQueryBuilder($queryBuilder);

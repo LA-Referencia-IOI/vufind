@@ -40,7 +40,7 @@ class SemanticSimilarFactoryTest extends \PHPUnit\Framework\TestCase
             ->with($this->equalTo('SemanticSearch'))
             ->willReturn($backend);
 
-        $configManager = $container->get(\VuFind\Config\PluginManager::class);
+        $configManager = $container->get(\VuFind\Config\ConfigManager::class);
         $configManager->expects($this->once())->method('get')
             ->with($this->equalTo('semanticsearch'))
             ->willReturn(
@@ -78,7 +78,7 @@ class SemanticSimilarFactoryTest extends \PHPUnit\Framework\TestCase
         $container->get(\VuFind\Search\BackendManager::class)
             ->method('get')
             ->willReturn($backend);
-        $container->get(\VuFind\Config\PluginManager::class)
+        $container->get(\VuFind\Config\ConfigManager::class)
             ->method('get')
             ->willReturn(new Config([]));
 
@@ -91,4 +91,3 @@ class SemanticSimilarFactoryTest extends \PHPUnit\Framework\TestCase
 
     use \VuFindTest\Feature\ReflectionTrait;
 }
-

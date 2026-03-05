@@ -218,7 +218,7 @@ vendor/bin/phpunit -c module/VuFind/tests/phpunit.xml \
   module/VuFind/tests/unit-tests/src/VuFindTest/Service/SemanticSearch/EmbeddingServiceTest.php \
   module/VuFind/tests/unit-tests/src/VuFindTest/Service/SemanticSearch/EmbeddingServiceFactoryTest.php \
   module/VuFind/tests/unit-tests/src/VuFindTest/Controller/SemanticSearchControllerTest.php \
-  module/VuFind/tests/unit-tests/src/VuFindTest/Controller/SemanticSearchRecordControllerTest.php
+  module/VuFind/tests/unit-tests/src/VuFindTest/Controller/SemanticSearchRecordControllerTest.php \ 
 ```
 - All tests
 ```
