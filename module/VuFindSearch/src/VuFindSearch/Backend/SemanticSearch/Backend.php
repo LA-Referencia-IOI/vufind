@@ -134,17 +134,18 @@ class Backend extends SolrBackend
         }
 
         $semanticQuery = null;
-        if (!empty($lookFor) && !str_starts_with($lookFor, '{!knn')) {
-            $embeddingArray = $this->getEmbedding($lookFor);
-            if ($embeddingArray) {
-                $vectorString = '[' . implode(',', $embeddingArray) . ']';
-                $semanticQuery = sprintf(
-                    '{!vectorSimilarity f=%s minReturn=%f}%s',
-                    $this->vectorField,
-                    $this->minScore,
-                    $vectorString
-                );
-            }
+        $startTime = microtime(true);
+        $embeddingArray = $this->getEmbedding($lookFor);
+        $this->log('debug', sprintf('SemanticSearch: Embedding retrieval time: %.4f seconds', microtime(true) - $startTime));
+
+        if ($embeddingArray) {
+            $vectorString = '[' . implode(',', $embeddingArray) . ']';
+            $semanticQuery = sprintf(
+                '{!vectorSimilarity f=%s minReturn=%f}%s',
+                $this->vectorField,
+                $this->minScore,
+                $vectorString
+            );
         }
 
         // Build standard parameters
@@ -169,8 +170,13 @@ class Backend extends SolrBackend
             }
         }
 
-        return $this->connector->search($params);
+        $startTime = microtime(true);
+        $response = $this->connector->search($params);
+        $this->log('debug', sprintf('SemanticSearch: Solr search time: %.4f seconds', microtime(true) - $startTime));
+
+        return $response;
     }
+
     /**
      * Get embedding vector for text.
      *
