@@ -33,6 +33,7 @@ use Psr\Container\ContainerInterface;
 use VuFind\Config\ConfigManagerInterface;
 use VuFindSearch\Backend\SemanticSearch\Backend;
 use VuFindSearch\Backend\Solr\Connector;
+use VuFind\Service\SemanticSearch\EmbeddingService;
 
 /**
  * Factory for the semantic SOLR backend.
@@ -87,26 +88,15 @@ class SemanticSearchBackendFactory extends AbstractSolrBackendFactory
     {
         $config = $this->getService(ConfigManagerInterface::class)->getConfigObject('embedding');
         $semanticConfig = $config->Embedding ?? new \VuFind\Config\Config();
-        $embeddingUrl = $semanticConfig->embedding_api_url ?? 'http://localhost:8000/embed';
         $vectorField = $semanticConfig->vector_field ?? 'vector';
-        $topK = $semanticConfig->topK ?? 10;
         $minScore = $semanticConfig->min_score ?? 0.7;
-        $model = $semanticConfig->model ?? 'sentence-transformers/paraphrase-multilingual-mpnet-base-v2';
-        $encodingFormat = $semanticConfig->encoding_format ?? 'float';
-        $user = $semanticConfig->user ?? 'user_123';
 
-        $httpClient = $this->getService('VuFindHttp\HttpService')->createClient();
-
+        $embeddingService = $this->getService(EmbeddingService::class);
         $backend = new Backend(
             $connector,
-            $httpClient,
-            $embeddingUrl,
+            $embeddingService,
             $vectorField,
-            $topK,
-            $minScore,
-            $model,
-            $encodingFormat,
-            $user
+            $minScore
         );
 
         $pageSize = $this->getIndexConfig('record_batch_size', 100);

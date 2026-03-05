@@ -4,6 +4,7 @@ namespace VuFindSearch\Backend\HybridSearch;
 
 use VuFindSearch\Backend\SemanticSearch\Backend as SemanticBackend;
 use VuFindSearch\ParamBag;
+use VuFind\Service\SemanticSearch\EmbeddingService;
 use VuFindSearch\Query\AbstractQuery;
 use VuFindSearch\Query\Query;
 
@@ -50,27 +51,17 @@ class Backend extends SemanticBackend
      */
     public function __construct(
         $connector,
-        $httpClient,
-        $embedUrl,
+        EmbeddingService $embeddingService,
         $vectorFld,
-        $topK,
         $minScore,
         $rrfK = 60,
-        $topKVector = 10,
-        $model = '',
-        $encoding = 'float',
-        $user = ''
+        $topKVector = 10
     ) {
         parent::__construct(
             $connector,
-            $httpClient,
-            $embedUrl,
+            $embeddingService,
             $vectorFld,
-            $topK,
-            $minScore,
-            $model,
-            $encoding,
-            $user
+            $minScore
         );
         $this->rrfK = $rrfK;
         $this->topKVector = $topKVector;
@@ -105,7 +96,7 @@ class Backend extends SemanticBackend
         }
 
         $startTime = microtime(true);
-        $embeddingArray = $this->getEmbedding($lookFor);
+        $embeddingArray = $this->embeddingService->embed($lookFor);
         $this->log('debug', sprintf('HybridSearch: Embedding retrieval time: %.4f seconds', microtime(true) - $startTime));
 
         if (!$embeddingArray) {

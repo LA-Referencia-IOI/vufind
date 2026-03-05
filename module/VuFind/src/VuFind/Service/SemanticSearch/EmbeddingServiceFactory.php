@@ -60,8 +60,8 @@ class EmbeddingServiceFactory implements FactoryInterface
      */
     public function __invoke(ContainerInterface $container, $requestedName, ?array $options = null)
     {
-        $config = $container->get(ConfigManagerInterface::class)->getConfigObject('semanticsearch');
-        $semanticConfig = $config->SemanticSearch ?? new \VuFind\Config\Config();
+        $config = $container->get(ConfigManagerInterface::class)->getConfigObject('embedding');
+        $semanticConfig = $config->Embedding ?? new \VuFind\Config\Config();
 
         $embeddingUrl = $semanticConfig->embedding_api_url ?? 'http://localhost:8000/embed';
         $model = $semanticConfig->model ?? 'sentence-transformers/paraphrase-multilingual-mpnet-base-v2';

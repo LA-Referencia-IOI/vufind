@@ -8,6 +8,7 @@ use VuFindSearch\Backend\Solr\Connector;
 use VuFindSearch\ParamBag;
 use VuFindSearch\Query\AbstractQuery;
 use VuFindSearch\Query\Query;
+use VuFind\Service\SemanticSearch\EmbeddingService;
 
 use function sprintf;
 
@@ -21,18 +22,11 @@ use function sprintf;
 class Backend extends SolrBackend
 {
     /**
-     * HTTP client for embedding API.
+     * Embedding Service.
      *
-     * @var HttpClient
+     * @var EmbeddingService
      */
-    protected $httpClient;
-
-    /**
-     * Embedding API URL.
-     *
-     * @var string
-     */
-    protected $embeddingUrl;
+    protected $embeddingService;
 
     /**
      * Vector field name.
@@ -42,68 +36,30 @@ class Backend extends SolrBackend
     protected $vectorField;
 
     /**
-     * Top K results for k-NN search.
-     *
-     * @var int
-     */
-    protected $topK;
-
-    /**
      * Minimum score for k-NN search.
      *
      * @var float
      */
     protected $minScore;
-    /**
-     * Embedding Model.
-     *
-     * @var string
-     */
-    protected $model;
-
-    /**
-     * Encoding Format.
-     *
-     * @var string
-     */
-    protected $encodingFormat;
-
-    /**
-     * User Identifier.
-     *
-     * @var string
-     */
-    protected $user;
 
     /**
      * Constructor.
      *
-     * @param Connector  $connector    SOLR connector
-     * @param HttpClient $httpClient   HTTP client
-     * @param string     $embeddingUrl Embedding API URL
-     * @param string     $vectorField  Vector field name
-     * @param int        $topK         Top K results
+     * @param Connector        $connector        SOLR connector
+     * @param EmbeddingService $embeddingService Embedding Service
+     * @param string           $vectorField      Vector field name
+     * @param float            $minScore         Minimum score
      */
     public function __construct(
         Connector $connector,
-        HttpClient $httpClient,
-        $embeddingUrl,
+        EmbeddingService $embeddingService,
         $vectorField,
-        $topK,
-        $minScore,
-        $model = 'sentence-transformers/paraphrase-multilingual-mpnet-base-v2',
-        $encodingFormat = 'float',
-        $user = 'user_123'
+        $minScore
     ) {
         parent::__construct($connector);
-        $this->httpClient = $httpClient;
-        $this->embeddingUrl = $embeddingUrl;
+        $this->embeddingService = $embeddingService;
         $this->vectorField = $vectorField;
-        $this->topK = $topK;
         $this->minScore = $minScore;
-        $this->model = $model;
-        $this->encodingFormat = $encodingFormat;
-        $this->user = $user;
     }
 
     /**
@@ -139,7 +95,7 @@ class Backend extends SolrBackend
 
 
         $startTime = microtime(true);
-        $embeddingArray = $this->getEmbedding($lookFor);
+        $embeddingArray = $this->embeddingService->embed($lookFor);
         $this->log('debug', sprintf('SemanticSearch: Embedding retrieval time: %.4f seconds', microtime(true) - $startTime));
 
         if (!$embeddingArray) {
@@ -181,39 +137,5 @@ class Backend extends SolrBackend
         $this->log('debug', sprintf('SemanticSearch: Solr search time: %.4f seconds', microtime(true) - $startTime));
 
         return $response;
-    }
-
-    /**
-     * Get embedding vector for text.
-     *
-     * @param string $text Text to embed
-     *
-     * @return ?array
-     */
-    public function getEmbedding(string $text): ?array
-    {
-        try {
-            $this->httpClient->setUri($this->embeddingUrl);
-            $this->httpClient->setMethod('POST');
-            $payload = [
-                'input'           => $text,
-                'model'           => $this->model,
-                'encoding_format' => $this->encodingFormat,
-                'user'            => $this->user
-            ];
-            $this->httpClient->setRawBody(json_encode($payload));
-            $this->httpClient->setHeaders(['Content-Type' => 'application/json']);
-
-            $response = $this->httpClient->send();
-            if ($response->isSuccess()) {
-                $data = json_decode($response->getBody(), true);
-                if (!empty($data['data']) && isset($data['data'][0]['embedding'])) {
-                    return $data['data'][0]['embedding'];
-                }
-            }
-        } catch (\Exception $e) {
-            $this->log('error', 'Error calling embedding API: ' . $e->getMessage());
-        }
-        return null;
     }
 }

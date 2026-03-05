@@ -6,6 +6,7 @@ use Psr\Container\ContainerInterface;
 use VuFind\Config\ConfigManagerInterface;
 use VuFindSearch\Backend\HybridSearch\Backend;
 use VuFindSearch\Backend\Solr\Connector;
+use VuFind\Service\SemanticSearch\EmbeddingService;
 
 /**
  * Factory for the Hybrid SOLR backend.
@@ -44,7 +45,7 @@ class HybridSearchBackendFactory extends AbstractSolrBackendFactory
         if (isset($config->Embedding->default_core)) {
             $this->defaultIndexName = $config->Embedding->default_core;
         }
-        return parent::__invoke($sm, $name, $options);
+        return (parent::__invoke($sm, $name, $options));
     }
 
     /**
@@ -58,30 +59,20 @@ class HybridSearchBackendFactory extends AbstractSolrBackendFactory
     {
         $config = $this->getService(ConfigManagerInterface::class)->getConfigObject('embedding');
         $hybridConfig = $config->Embedding ?? new \VuFind\Config\Config();
-        $embeddingUrl = $hybridConfig->embedding_api_url ?? 'http://localhost:8000/embed';
         $vectorField = $hybridConfig->vector_field ?? 'vector';
-        $topK = $hybridConfig->topK ?? 10;
         $minScore = $hybridConfig->min_score ?? 0.7;
         $rrfK = $hybridConfig->rrf_k ?? 60;
         $topKVector = $hybridConfig->topK_vector ?? 10;
-        $model = $hybridConfig->model ?? 'sentence-transformers/paraphrase-multilingual-mpnet-base-v2';
-        $encodingFormat = $hybridConfig->encoding_format ?? 'float';
-        $user = $hybridConfig->user ?? 'user_123';
 
-        $httpClient = $this->getService('VuFindHttp\HttpService')->createClient();
+        $embeddingService = $this->getService(EmbeddingService::class);
 
         $backend = new Backend(
             $connector,
-            $httpClient,
-            $embeddingUrl,
+            $embeddingService,
             $vectorField,
-            $topK,
             $minScore,
             $rrfK,
-            $topKVector,
-            $model,
-            $encodingFormat,
-            $user
+            $topKVector
         );
 
         $pageSize = $this->getIndexConfig('record_batch_size', 100);

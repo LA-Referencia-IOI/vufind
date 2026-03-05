@@ -29,8 +29,8 @@
 
 namespace VuFind\Service\SemanticSearch;
 
+use Psr\Log\LoggerAwareInterface;
 use Laminas\Http\Client as HttpClient;
-use VuFind\Log\LoggerAwareInterface;
 
 /**
  * Embedding Service.
