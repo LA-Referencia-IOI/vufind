@@ -1,50 +1,21 @@
 <?php
 
-/**
- * Factory for the semantic SOLR backend.
- *
- * PHP version 8
- *
- * Copyright (C) Villanova University 2013.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2,
- * as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, see
- * <https://www.gnu.org/licenses/>.
- *
- * @category VuFind
- * @package  Search
- * @author   Demian Katz <demian.katz@villanova.edu>
- * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://vufind.org Main Site
- */
-
 namespace VuFind\Search\Factory;
 
 use Psr\Container\ContainerInterface;
 use VuFind\Config\ConfigManagerInterface;
-use VuFindSearch\Backend\SemanticSearch\Backend;
+use VuFindSearch\Backend\HybridSearch\Backend;
 use VuFindSearch\Backend\Solr\Connector;
 use VuFind\Service\SemanticSearch\EmbeddingService;
 
 /**
- * Factory for the semantic SOLR backend.
+ * Factory for the Hybrid SOLR backend.
  *
  * @category VuFind
  * @package  Search
- * @author   Demian Katz <demian.katz@villanova.edu>
- * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://vufind.org Main Site
+ * @author   Jesiel Viana <jesielviana@gmail.com>
  */
-class SemanticSearchBackendFactory extends AbstractSolrBackendFactory
+class HybridSearchBackendFactory extends AbstractSolrBackendFactory
 {
     /**
      * Constructor
@@ -74,7 +45,7 @@ class SemanticSearchBackendFactory extends AbstractSolrBackendFactory
         if (isset($config->Embedding->default_core)) {
             $this->defaultIndexName = $config->Embedding->default_core;
         }
-        return parent::__invoke($sm, $name, $options);
+        return (parent::__invoke($sm, $name, $options));
     }
 
     /**
@@ -87,16 +58,21 @@ class SemanticSearchBackendFactory extends AbstractSolrBackendFactory
     protected function createBackend(Connector $connector)
     {
         $config = $this->getService(ConfigManagerInterface::class)->getConfigObject('embedding');
-        $semanticConfig = $config->Embedding ?? new \VuFind\Config\Config();
-        $vectorField = $semanticConfig->vector_field ?? 'vector';
-        $minScore = $semanticConfig->min_score ?? 0.7;
+        $hybridConfig = $config->Embedding ?? new \VuFind\Config\Config();
+        $vectorField = $hybridConfig->vector_field ?? 'vector';
+        $minScore = $hybridConfig->min_score ?? 0.7;
+        $rrfK = $hybridConfig->rrf_k ?? 60;
+        $topKVector = $hybridConfig->topK_vector ?? 10;
 
         $embeddingService = $this->getService(EmbeddingService::class);
+
         $backend = new Backend(
             $connector,
             $embeddingService,
             $vectorField,
-            $minScore
+            $minScore,
+            $rrfK,
+            $topKVector
         );
 
         $pageSize = $this->getIndexConfig('record_batch_size', 100);
@@ -114,18 +90,6 @@ class SemanticSearchBackendFactory extends AbstractSolrBackendFactory
     }
 
     /**
-     * Create listeners.
-     *
-     * @param \VuFindSearch\Backend\Solr\Backend $backend Backend
-     *
-     * @return void
-     */
-    protected function createListeners(\VuFindSearch\Backend\Solr\Backend $backend)
-    {
-        parent::createListeners($backend);
-    }
-
-    /**
      * Get the callback for creating a record.
      *
      * Returns a callable or null to use RecordCollectionFactory's default method.
@@ -136,7 +100,7 @@ class SemanticSearchBackendFactory extends AbstractSolrBackendFactory
     {
         $manager = $this->getService(\VuFind\RecordDriver\PluginManager::class);
         return function ($data) use ($manager) {
-            $driver = $manager->get('SemanticSearch');
+            $driver = $manager->get('HybridSearch');
             $driver->setRawData($data);
             return $driver;
         };

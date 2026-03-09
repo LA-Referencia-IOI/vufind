@@ -63,14 +63,14 @@ class SemanticSimilarFactory implements FactoryInterface
     public function __invoke(
         ContainerInterface $container,
         $requestedName,
-        array $options = null
+        ?array $options = null
     ) {
         // Load the SemanticSearch backend
         $backendManager = $container->get(\VuFind\Search\BackendManager::class);
         $backend = $backendManager->get('SemanticSearch');
 
         // Load configuration
-        $configManager = $container->get(\VuFind\Config\PluginManager::class);
+        $configManager = $container->get(\VuFind\Config\ConfigManager::class);
         $config = $configManager->get('semanticsearch');
 
         $vectorField = $config->SemanticSearch->vector_field ?? 'vector';

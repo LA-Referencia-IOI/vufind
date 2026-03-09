@@ -77,6 +77,7 @@ class BackendRegistry extends \VuFind\ServiceManager\AbstractPluginManager
         'SolrAuth' => Factory\SolrAuthBackendFactory::class,
         'SolrReserves' => Factory\SolrReservesBackendFactory::class,
         'SemanticSearch' => Factory\SemanticSearchBackendFactory::class,
+        'HybridSearch' => Factory\HybridSearchBackendFactory::class,
         'SolrWeb' => Factory\SolrWebBackendFactory::class,
         'Summon' => Factory\SummonBackendFactory::class,
         'WorldCat2' => Factory\WorldCat2BackendFactory::class,

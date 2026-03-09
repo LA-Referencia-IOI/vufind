@@ -315,6 +315,20 @@
   </requestDispatcher>
 
 
+  <requestHandler name="/combined" class="solr.CombinedQuerySearchHandler">
+      <lst name="defaults">
+          <str name="df">allfields</str>
+          <str name="echoParams">explicit</str>
+      </lst>
+      <!-- <arr name="last-components">
+          <str>highlight</str>
+      </arr> -->
+  </requestHandler>
+
+  <searchComponent class="solr.CombinedQueryComponent" name="combined_query">
+      <int name="maxCombinerQueries">2</int>
+  </searchComponent>
+
   <!-- requestHandler plugins... incoming queries will be dispatched to the
      correct handler based on the path or the qt (query type) param.
      Names starting with a '/' are accessed with a path equal to the
