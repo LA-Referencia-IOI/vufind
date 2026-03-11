@@ -94,9 +94,7 @@ class Backend extends SolrBackend
         }
 
 
-        $startTime = microtime(true);
         $embeddingArray = $this->embeddingService->embed($lookFor);
-        $this->log('debug', sprintf('SemanticSearch: Embedding retrieval time: %.4f seconds', microtime(true) - $startTime));
 
         if (!$embeddingArray) {
             throw new BackendException('Problem connecting to Embedding API.');

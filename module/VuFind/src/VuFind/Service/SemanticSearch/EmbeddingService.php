@@ -81,6 +81,27 @@ class EmbeddingService implements LoggerAwareInterface
     protected $user;
 
     /**
+     * Embedding API key.
+     *
+     * @var string
+     */
+    protected $apiKey;
+
+    /**
+     * Optional site URL (sent as HTTP-Referer for compatible providers).
+     *
+     * @var string
+     */
+    protected $siteUrl;
+
+    /**
+     * Optional application name (sent as X-Title for compatible providers).
+     *
+     * @var string
+     */
+    protected $appName;
+
+    /**
      * Constructor.
      *
      * @param HttpClient $httpClient     HTTP client
@@ -88,19 +109,28 @@ class EmbeddingService implements LoggerAwareInterface
      * @param string     $model          Embedding Model
      * @param string     $encodingFormat Encoding Format
      * @param string     $user           User Identifier
+     * @param string     $apiKey         Embedding API key
+     * @param string     $siteUrl        Optional provider site URL
+     * @param string     $appName        Optional provider application name
      */
     public function __construct(
         HttpClient $httpClient,
         string $embeddingUrl,
         string $model,
         string $encodingFormat,
-        string $user
+        string $user,
+        string $apiKey,
+        string $siteUrl,
+        string $appName
     ) {
         $this->httpClient = $httpClient;
         $this->embeddingUrl = $embeddingUrl;
         $this->model = $model;
         $this->encodingFormat = $encodingFormat;
         $this->user = $user;
+        $this->apiKey = $apiKey;
+        $this->siteUrl = $siteUrl;
+        $this->appName = $appName;
     }
 
     /**
@@ -112,6 +142,7 @@ class EmbeddingService implements LoggerAwareInterface
      */
     public function embed(string $text): ?array
     {
+        $startTime = microtime(true);
         try {
             $this->httpClient->setUri($this->embeddingUrl);
             $this->httpClient->setMethod('POST');
@@ -122,14 +153,38 @@ class EmbeddingService implements LoggerAwareInterface
                 'user'            => $this->user
             ];
             $this->httpClient->setRawBody(json_encode($payload));
-            $this->httpClient->setHeaders(['Content-Type' => 'application/json']);
+            $headers = ['Content-Type' => 'application/json'];
+            if (!empty($this->apiKey)) {
+                $headers['Authorization'] = 'Bearer ' . $this->apiKey;
+            }
+            if (!empty($this->siteUrl)) {
+                $headers['HTTP-Referer'] = $this->siteUrl;
+            }
+            if (!empty($this->appName)) {
+                $headers['X-Title'] = $this->appName;
+            }
+            $this->httpClient->setHeaders($headers);
 
             $response = $this->httpClient->send();
+            $this->log(
+                'debug',
+                sprintf(
+                    'Embedding retrieval time: %.4f seconds [url=%s]',
+                    microtime(true) - $startTime,
+                    $this->embeddingUrl
+                )
+            );
             if ($response->isSuccess()) {
                 $data = json_decode($response->getBody(), true);
                 if (!empty($data['data']) && isset($data['data'][0]['embedding'])) {
                     return $data['data'][0]['embedding'];
                 }
+                $this->log('error', 'Unexpected embedding API response format.');
+            } else {
+                $this->log(
+                    'error',
+                    'Embedding API request failed with status code: ' . $response->getStatusCode()
+                );
             }
         } catch (\Exception $e) {
             $this->log('error', 'Error calling embedding API: ' . $e->getMessage());
