@@ -96,9 +96,7 @@ class Backend extends SemanticBackend
             return parent::rawJsonSearch($query, $offset, $limit, $params);
         }
 
-        $startTime = microtime(true);
         $embeddingArray = $this->embeddingService->embed($lookFor);
-        $this->log('debug', sprintf('HybridSearch: Embedding retrieval time: %.4f seconds', microtime(true) - $startTime));
 
         if (!$embeddingArray) {
             throw new BackendException('Problem connecting to Embedding API.');
@@ -155,7 +153,6 @@ class Backend extends SemanticBackend
         ];
 
         // Disable highlighting for hybrid search to prevent 500 errors
-        // (CombinedQuerySearchHandler has known issues with highlighting metadata)
         $params->set('hl', 'false');
 
         // Add filters from original params if present
