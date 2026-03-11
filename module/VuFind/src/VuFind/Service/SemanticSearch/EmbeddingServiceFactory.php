@@ -63,26 +63,29 @@ class EmbeddingServiceFactory implements FactoryInterface
         $config = $container->get(ConfigManagerInterface::class)->getConfigObject('embedding');
         $semanticConfig = $config->Embedding ?? new \VuFind\Config\Config();
 
-        $embeddingUrl = $semanticConfig->embedding_api_url ?? 'https://openrouter.ai/api/v1/embeddings';
-        $model = $semanticConfig->model ?? 'openai/text-embedding-3-small';
+        $embeddingUrl = $semanticConfig->embedding_api_url ?? null;
+        $model = $semanticConfig->model ?? null;
         $encodingFormat = $semanticConfig->encoding_format ?? 'float';
-        $user = $semanticConfig->user ?? 'user_123';
         $apiKey = $semanticConfig->embedding_api_key
             ?? getenv('EMBEDDING_API_KEY')
-            ?: $semanticConfig->openrouter_api_key
-            ?? getenv('OPENROUTER_API_KEY')
-            ?: getenv('OPENAI_API_KEY')
             ?: '';
         $siteUrl = $semanticConfig->embedding_site_url
-            ?? getenv('EMBEDDING_SITE_URL')
-            ?: $semanticConfig->openrouter_site_url
-            ?? getenv('OPENROUTER_SITE_URL')
             ?: '';
         $appName = $semanticConfig->embedding_app_name
             ?? getenv('EMBEDDING_APP_NAME')
-            ?: $semanticConfig->openrouter_app_name
-            ?? getenv('OPENROUTER_APP_NAME')
             ?: '';
+
+        if (empty($embeddingUrl)) {
+            throw new \InvalidArgumentException(
+                'embedding_api_url must be configured in embedding.ini.'
+            );
+        }
+
+        if (empty($model)) {
+            throw new \InvalidArgumentException(
+                'model must be configured in embedding.ini.'
+            );
+        }
 
         $httpClient = $container->get('VuFindHttp\HttpService')->createClient();
 
@@ -91,7 +94,6 @@ class EmbeddingServiceFactory implements FactoryInterface
             $embeddingUrl,
             $model,
             $encodingFormat,
-            $user,
             $apiKey,
             $siteUrl,
             $appName
