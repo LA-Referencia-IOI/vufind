@@ -74,13 +74,6 @@ class EmbeddingService implements LoggerAwareInterface
     protected $encodingFormat;
 
     /**
-     * User Identifier.
-     *
-     * @var string
-     */
-    protected $user;
-
-    /**
      * Embedding API key.
      *
      * @var string
@@ -108,7 +101,6 @@ class EmbeddingService implements LoggerAwareInterface
      * @param string     $embeddingUrl   Embedding API URL
      * @param string     $model          Embedding Model
      * @param string     $encodingFormat Encoding Format
-     * @param string     $user           User Identifier
      * @param string     $apiKey         Embedding API key
      * @param string     $siteUrl        Optional provider site URL
      * @param string     $appName        Optional provider application name
@@ -118,7 +110,6 @@ class EmbeddingService implements LoggerAwareInterface
         string $embeddingUrl,
         string $model,
         string $encodingFormat,
-        string $user,
         string $apiKey,
         string $siteUrl,
         string $appName
@@ -127,7 +118,6 @@ class EmbeddingService implements LoggerAwareInterface
         $this->embeddingUrl = $embeddingUrl;
         $this->model = $model;
         $this->encodingFormat = $encodingFormat;
-        $this->user = $user;
         $this->apiKey = $apiKey;
         $this->siteUrl = $siteUrl;
         $this->appName = $appName;
@@ -150,7 +140,6 @@ class EmbeddingService implements LoggerAwareInterface
                 'input'           => $text,
                 'model'           => $this->model,
                 'encoding_format' => $this->encodingFormat,
-                'user'            => $this->user
             ];
             $this->httpClient->setRawBody(json_encode($payload));
             $headers = ['Content-Type' => 'application/json'];

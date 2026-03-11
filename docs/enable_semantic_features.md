@@ -36,21 +36,32 @@ This field stores the document embeddings:
 
 To enable the Semantic Search feature, you will need to update a few configuration files.
 
-### 1.1 `semanticsearch.ini`
+### 1.1 `embedding.ini`
 
-Create or edit the `local/config/vufind/semanticsearch.ini` file and fill it with valid values for your environment:
+Create or edit the `local/config/vufind/embedding.ini` file and fill it with valid values for your environment:
 
 ```ini
-[SemanticSearch]
-embedding_api_url = "http://localhost:8000/v1/embeddings"
+[Embedding]
+embedding_api_url = "https://your-openai-compatible-provider/v1/embeddings"
+embedding_api_key = ""
+embedding_site_url = ""
+embedding_app_name = ""
+
 vector_field      = "vector"
 topK              = 10
 default_core      = "biblio"
-min_score         = 0.0
-model             = "embaas/sentence-transformers-multilingual-e5-large"
+min_score         = 0.7
+model             = "text-embedding-3-small"
 encoding_format   = "float"
-user              = "user_example"
 ```
+
+- **`embedding_api_url`**: Required. Full URL of an OpenAI-compatible embeddings endpoint.
+- **`model`**: Required. Embedding model identifier supported by your provider.
+- **`embedding_api_key`**: Optional in file if you prefer using the `EMBEDDING_API_KEY` environment variable.
+- **`embedding_site_url`**: Optional. Useful for providers that accept `HTTP-Referer`.
+- **`embedding_app_name`**: Optional. Useful for providers that accept `X-Title`. It can also be provided through `EMBEDDING_APP_NAME`.
+
+> The embedding request payload now follows a provider-agnostic OpenAI-compatible contract and does not include a `user` field.
 
 ### 1.2 `searchbox.ini`
 
@@ -93,7 +104,19 @@ ajax = true
 
 To display semantic similar items on the record detail page, you will need to register the related items module.
 
-### 2.1 `config.ini`
+### 2.1 `semanticsearch.ini`
+
+If you want to customize the related-items lookup behavior, create `local/config/vufind/semanticsearch.ini` with settings such as:
+
+```ini
+[SemanticSearch]
+vector_field = "vector"
+topK = 5
+```
+
+This file is used by the `SemanticSimilar` related-items module. The embedding provider configuration itself is still read from `embedding.ini`.
+
+### 2.2 `config.ini`
 
 Edit `local/config/vufind/config.ini` and add `related[] = "SemanticSimilar"` under the `[Record]` section. A typical setup with both standard and semantic similar items enabled will look like this:
 
