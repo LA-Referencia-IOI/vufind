@@ -32,7 +32,7 @@
        that you fully re-index after changing this setting as it can
        affect both how text is indexed and queried.
     -->
-  <luceneMatchVersion>9.11</luceneMatchVersion>
+  <luceneMatchVersion>10.1</luceneMatchVersion>
 
   <!-- Use the classic schema style by default for VuFind -->
   <schemaFactory class="ClassicIndexSchemaFactory"/>
@@ -314,15 +314,18 @@
     </httpCaching>
   </requestDispatcher>
 
+  <requestHandler name="/select" class="solr.SearchHandler">
+      <lst name="defaults">
+        <str name="echoParams">explicit</str>
+        <str name="df">allfields</str>
+      </lst>
+  </requestHandler>
 
   <requestHandler name="/combined" class="solr.CombinedQuerySearchHandler">
       <lst name="defaults">
           <str name="df">allfields</str>
           <str name="echoParams">explicit</str>
       </lst>
-      <!-- <arr name="last-components">
-          <str>highlight</str>
-      </arr> -->
   </requestHandler>
 
   <searchComponent class="solr.CombinedQueryComponent" name="combined_query">
