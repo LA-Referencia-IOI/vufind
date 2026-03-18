@@ -17,21 +17,11 @@ sudo docker run -d --name solr-nightly -p 8983:8983 -v solr_data:/var/solr -e SO
 ```
 ### 3. Copy the core into the Solr container
 ```shell
-sudo docker cp /home/jesielviana/Dev/ioi/vufind/solr/vufind/biblio solr-nightly:/var/solr/data/
-
-#EC2
 sudo docker cp /usr/local/vufind/solr/vufind/biblio solr-nightly:/var/solr/data/
 ```
 ### 4. Copy the Vufind libs to Solr
 
 ```shell
-sudo docker cp /home/jesielviana/Dev/ioi/vufind/solr/vendor/modules/analysis-extras/lib/icu4j-74.2.jar solr-nightly:/opt/solr/server/solr-webapp/webapp/WEB-INF/lib/ 
-
-sudo docker cp /home/jesielviana/Dev/ioi/vufind/solr/vendor/modules/analysis-extras/lib/lucene-analysis-icu-9.11.1.jar solr-nightly:/opt/solr/server/solr-webapp/webapp/WEB-INF/lib/
-
-sudo docker cp /home/jesielviana/Dev/ioi/vufind/solr/vufind/jars/. solr-nightly:/opt/solr/server/solr-webapp/webapp/WEB-INF/lib/
-
-#EC2
 sudo docker cp /usr/local/vufind/solr/vendor/modules/analysis-extras/lib/icu4j-74.2.jar solr-nightly:/opt/solr/server/solr-webapp/webapp/WEB-INF/lib/ 
 
 sudo docker cp  /usr/local/vufind/solr/vendor/modules/analysis-extras/lib/lucene-analysis-icu-9.11.1.jar solr-nightly:/opt/solr/server/solr-webapp/webapp/WEB-INF/lib/
