@@ -17,8 +17,6 @@ namespace VuFind\Log {
 
 namespace VuFindTest\Backend\SemanticSearch {
 
-    use Laminas\Http\Client as HttpClient;
-    use Laminas\Http\Response;
     use PHPUnit\Framework\TestCase;
     use VuFindSearch\Backend\SemanticSearch\Backend;
     use VuFindSearch\Backend\Solr\Connector;
@@ -51,7 +49,7 @@ namespace VuFindTest\Backend\SemanticSearch {
                             && $params->get('rows') === [10]
                             && $params->get('start') === [5]
                             && !empty($q[0])
-                            && str_contains($q[0], '{!vectorSimilarity f=my_vector minReturn=0.700000}')
+                            && str_contains($q[0], '{!vectorSimilarity f=my_vector minReturn=0.700000 topK=10}')
                             && !empty($params->get('fl'))
                             && str_contains(implode(',', $params->get('fl')), 'score')
                             && null === $params->get('qf')
@@ -76,7 +74,7 @@ namespace VuFindTest\Backend\SemanticSearch {
         }
 
         /**
-         * Test fallback behavior when embedding is unavailable.
+         * Test error behavior when embedding is unavailable.
          *
          * @return void
          */
@@ -95,7 +93,8 @@ namespace VuFindTest\Backend\SemanticSearch {
 
             $backend = new Backend($connector, $embeddingService, 'my_vector', 0.7);
             $backend->setQueryBuilder($queryBuilder);
-            $this->assertNull($backend->rawJsonSearch(new Query('hello world'), 5, 10));
+            $this->expectException(\VuFindSearch\Backend\Exception\BackendException::class);
+            $backend->rawJsonSearch(new Query('hello world'), 5, 10);
         }
 
         /**

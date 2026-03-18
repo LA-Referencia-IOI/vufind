@@ -3,7 +3,7 @@
 namespace VuFindSearch\Backend\HybridSearch;
 
 use VuFindSearch\Backend\Exception\BackendException;
-use VuFindSearch\Backend\SemanticSearch\Backend as SemanticBackend;
+use VuFindSearch\Backend\Solr\Backend as SolrBackend;
 use VuFindSearch\ParamBag;
 use VuFind\Service\SemanticSearch\EmbeddingService;
 use VuFindSearch\Query\AbstractQuery;
@@ -19,8 +19,29 @@ use function sprintf;
  * @package  Search
  * @author   Jesiel Viana <jesielviana@gmail.com>
  */
-class Backend extends SemanticBackend
+class Backend extends SolrBackend
 {
+    /**
+     * Embedding Service.
+     *
+     * @var EmbeddingService
+     */
+    protected $embeddingService;
+
+    /**
+     * Vector field name.
+     *
+     * @var string
+     */
+    protected $vectorField;
+
+    /**
+     * Minimum score for vector search.
+     *
+     * @var float
+     */
+    protected $minScore;
+
     /**
      * RRF K parameter.
      *
@@ -58,12 +79,10 @@ class Backend extends SemanticBackend
         $rrfK = 60,
         $topKVector = 10
     ) {
-        parent::__construct(
-            $connector,
-            $embeddingService,
-            $vectorFld,
-            $minScore
-        );
+        parent::__construct($connector);
+        $this->embeddingService = $embeddingService;
+        $this->vectorField = $vectorFld;
+        $this->minScore = $minScore;
         $this->rrfK = $rrfK;
         $this->topKVector = $topKVector;
     }
