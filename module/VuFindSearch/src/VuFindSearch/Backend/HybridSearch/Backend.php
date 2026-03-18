@@ -152,8 +152,11 @@ class Backend extends SemanticBackend
             ],
         ];
 
-        // Disable highlighting for hybrid search to prevent 500 errors
-        $params->set('hl', 'false');
+
+        // Enable highlighting
+        $params->set('hl', 'true');
+        $params->set('hl.q', $lexicalQ);
+
 
         // Add filters from original params if present
         $fq = $params->get('fq');

@@ -130,6 +130,10 @@ class Backend extends SolrBackend
             }
         }
 
+        // Enable highlighting
+        $params->set('hl', 'true');
+        $params->set('hl.q', $lookFor);
+
         $startTime = microtime(true);
         $response = $this->connector->search($params);
         $this->log('debug', sprintf('SemanticSearch: Solr search time: %.4f seconds', microtime(true) - $startTime));
