@@ -13,7 +13,7 @@ Hybrid Search requires a vector field to store document embeddings.
 ```xml
 <fieldType name="knn_vector" class="solr.DenseVectorField"
            vectorDimension="768"
-           similarityFunction="dot_product"/>
+           similarityFunction="cosine"/>
 ```
 
 - **Field**: `vector`

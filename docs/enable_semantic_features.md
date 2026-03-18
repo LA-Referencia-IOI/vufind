@@ -13,11 +13,11 @@ A field type for _k-Nearest Neighbors_ (k-NN) vector search.
 ```xml
 <fieldType name="knn_vector" class="solr.DenseVectorField"
            vectorDimension="768"
-           similarityFunction="dot_product"/>
+           similarityFunction="cosine"/>
 ```
 
 - **`vectorDimension="768"`** — Must match the embedding model dimension.
-- **`similarityFunction="dot_product"`** — Defines how similarity between vectors is computed.
+- **`similarityFunction="cosine"`** — Defines how similarity between vectors is computed.
 
 - New Field: `vector`
 
