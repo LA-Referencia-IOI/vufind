@@ -87,10 +87,11 @@ class SemanticSearchBackendFactory extends AbstractSolrBackendFactory
     protected function createBackend(Connector $connector)
     {
         $config = $this->getService(ConfigManagerInterface::class)->getConfigObject('embedding');
-        $semanticConfig = $config->Embedding ?? new \VuFind\Config\Config();
-        $vectorField = $semanticConfig->vector_field ?? 'vector';
-        $minScore = $semanticConfig->min_score ?? 0.0;
-        $topK = $semanticConfig->topK ?? 10;
+        $embeddingConfig = $config->Embedding ?? new \VuFind\Config\Config();
+        $vectorField = $embeddingConfig->vector_field ?? 'vector';
+        $minScore = $embeddingConfig->min_score ?? 0.0;
+        $topK = $embeddingConfig->topK ?? 10;
+        $queryParser = $embeddingConfig->query_parser ?? 'knn';
 
         $embeddingService = $this->getService(EmbeddingService::class);
         $backend = new Backend(
@@ -98,7 +99,8 @@ class SemanticSearchBackendFactory extends AbstractSolrBackendFactory
             $embeddingService,
             $vectorField,
             $minScore,
-            $topK
+            $topK,
+            $queryParser
         );
 
         $pageSize = $this->getIndexConfig('record_batch_size', 100);

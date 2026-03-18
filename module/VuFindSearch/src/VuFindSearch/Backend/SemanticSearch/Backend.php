@@ -50,6 +50,13 @@ class Backend extends SolrBackend
     protected $topK;
 
     /**
+     * Query parser type.
+     *
+     * @var string
+     */
+    protected $queryParser;
+
+    /**
      * Constructor.
      *
      * @param Connector        $connector        SOLR connector
@@ -57,19 +64,22 @@ class Backend extends SolrBackend
      * @param string           $vectorField      Vector field name
      * @param float            $minScore         Minimum score
      * @param int              $topK             Top K results
+     * @param string           $queryParser      Query parser type
      */
     public function __construct(
         Connector $connector,
         EmbeddingService $embeddingService,
         $vectorField,
         $minScore,
-        $topK = 10
+        $topK = 10,
+        $queryParser = 'knn'
     ) {
         parent::__construct($connector);
         $this->embeddingService = $embeddingService;
         $this->vectorField = $vectorField;
         $this->minScore = $minScore;
         $this->topK = $topK;
+        $this->queryParser = $queryParser;
     }
 
     /**
@@ -111,12 +121,21 @@ class Backend extends SolrBackend
         }
 
         $vectorString = '[' . implode(',', $embeddingArray) . ']';
-        $semanticQuery = sprintf(
-            '{!knn f=%s topK=%d}%s',
-            $this->vectorField,
-            $this->topK,
-            $vectorString
-        );
+        if ($this->queryParser === 'vectorSimilarity') {
+            $semanticQuery = sprintf(
+                '{!vectorSimilarity f=%s minReturn=%f}%s',
+                $this->vectorField,
+                $this->minScore,
+                $vectorString
+            );
+        } else {
+            $semanticQuery = sprintf(
+                '{!knn f=%s topK=%d}%s',
+                $this->vectorField,
+                $this->topK,
+                $vectorString
+            );
+        }
 
         // Build standard parameters
         $params->mergeWith($this->getQueryBuilder()->build($query, $params));
@@ -125,7 +144,9 @@ class Backend extends SolrBackend
         // and also clear edismax-specific parameters that might conflict with k-NN
         if ($semanticQuery) {
             $params->set('q', $semanticQuery);
-            $params->add('fq', '{!frange l=' . $this->minScore . '}query($q)');
+            if ($this->queryParser !== 'vectorSimilarity') {
+                $params->add('fq', '{!frange l=' . $this->minScore . '}query($q)');
+            }
             $params->remove('qf');
             $params->remove('qt');
             $params->remove('mm');
