@@ -326,6 +326,9 @@
           <str name="df">allfields</str>
           <str name="echoParams">explicit</str>
       </lst>
+      <arr name="last-components">
+        <str>highlight</str>
+      </arr> 
   </requestHandler>
 
   <searchComponent class="solr.CombinedQueryComponent" name="combined_query">

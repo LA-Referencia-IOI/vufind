@@ -137,7 +137,10 @@ class SemanticSearchBackendFactory extends AbstractSolrBackendFactory
         $manager = $this->getService(\VuFind\RecordDriver\PluginManager::class);
         return function ($data) use ($manager) {
             $driver = $manager->get('SemanticSearch');
+            $hl = $data['__highlight_details'] ?? [];
+            unset($data['__highlight_details']);
             $driver->setRawData($data);
+            $driver->setHighlightDetails($hl);
             return $driver;
         };
     }
