@@ -60,30 +60,30 @@ class EmbeddingServiceFactory implements FactoryInterface
      */
     public function __invoke(ContainerInterface $container, $requestedName, ?array $options = null)
     {
-        $config = $container->get(ConfigManagerInterface::class)->getConfigObject('embedding');
-        $semanticConfig = $config->Embedding ?? new \VuFind\Config\Config();
+        $config = $container->get(ConfigManagerInterface::class)->getConfigObject('vectorsearch');
+        $vectorSearchConfig = $config->VectorSearch ?? new \VuFind\Config\Config();
 
-        $embeddingUrl = $semanticConfig->embedding_api_url ?? null;
-        $model = $semanticConfig->model ?? null;
-        $encodingFormat = $semanticConfig->encoding_format ?? 'float';
-        $apiKey = $semanticConfig->embedding_api_key
+        $embeddingUrl = $vectorSearchConfig->embedding_api_url ?? null;
+        $model = $vectorSearchConfig->model ?? null;
+        $encodingFormat = $vectorSearchConfig->encoding_format ?? 'float';
+        $apiKey = $vectorSearchConfig->embedding_api_key
             ?? getenv('EMBEDDING_API_KEY')
             ?: '';
-        $siteUrl = $semanticConfig->embedding_site_url
+        $siteUrl = $vectorSearchConfig->embedding_site_url
             ?: '';
-        $appName = $semanticConfig->embedding_app_name
+        $appName = $vectorSearchConfig->embedding_app_name
             ?? getenv('EMBEDDING_APP_NAME')
             ?: '';
 
         if (empty($embeddingUrl)) {
             throw new \InvalidArgumentException(
-                'embedding_api_url must be configured in embedding.ini.'
+                'embedding_api_url must be configured in vectorsearch.ini.'
             );
         }
 
         if (empty($model)) {
             throw new \InvalidArgumentException(
-                'model must be configured in embedding.ini.'
+                'model must be configured in vectorsearch.ini.'
             );
         }
 

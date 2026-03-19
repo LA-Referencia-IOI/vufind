@@ -41,9 +41,9 @@ class HybridSearchBackendFactory extends AbstractSolrBackendFactory
     public function __invoke(ContainerInterface $sm, $name, ?array $options = null)
     {
         $this->setup($sm);
-        $config = $this->getService(ConfigManagerInterface::class)->getConfigObject('embedding');
-        if (isset($config->Embedding->default_core)) {
-            $this->defaultIndexName = $config->Embedding->default_core;
+        $config = $this->getService(ConfigManagerInterface::class)->getConfigObject('vectorsearch');
+        if (isset($config->VectorSearch->default_core)) {
+            $this->defaultIndexName = $config->VectorSearch->default_core;
         }
         return (parent::__invoke($sm, $name, $options));
     }
@@ -57,12 +57,12 @@ class HybridSearchBackendFactory extends AbstractSolrBackendFactory
      */
     protected function createBackend(Connector $connector)
     {
-        $config = $this->getService(ConfigManagerInterface::class)->getConfigObject('embedding');
-        $embeddingConfig = $config->Embedding ?? new \VuFind\Config\Config();
-        $vectorField = $embeddingConfig->vector_field ?? 'vector';
-        $minScore = $embeddingConfig->min_score ?? 0.7;
-        $rrfK = $embeddingConfig->rrf_k ?? 60;
-        $topKVector = $embeddingConfig->topK_vector ?? 10;
+        $config = $this->getService(ConfigManagerInterface::class)->getConfigObject('vectorsearch');
+        $vectorSearchConfig = $config->VectorSearch ?? new \VuFind\Config\Config();
+        $vectorField = $vectorSearchConfig->vector_field ?? 'vector';
+        $minScore = $vectorSearchConfig->min_score ?? 0.7;
+        $rrfK = $vectorSearchConfig->rrf_k ?? 60;
+        $topKVector = $vectorSearchConfig->topK_vector ?? 10;
 
         $embeddingService = $this->getService(EmbeddingService::class);
 
