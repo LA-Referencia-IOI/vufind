@@ -44,15 +44,17 @@ namespace VuFindTest\Service\SemanticSearch {
             $httpClient = $this->createMock(HttpClient::class);
 
             $configManager = $container->get(ConfigManagerInterface::class);
-            $configManager->method('getConfigObject')->with('embedding')
+            $configManager->method('getConfigObject')->with('vectorsearch')
                 ->willReturn(
                     new Config(
                         [
-                            'Embedding' => [
+                            'VectorSearch' => [
                                 'embedding_api_url' => 'http://embed/custom',
                                 'model' => 'model-z',
                                 'encoding_format' => 'base64',
-                                'user' => 'u777',
+                                'embedding_api_key' => 'k777',
+                                'embedding_site_url' => 'https://example.org',
+                                'embedding_app_name' => 'my-app',
                             ],
                         ]
                     )
@@ -69,11 +71,13 @@ namespace VuFindTest\Service\SemanticSearch {
             $this->assertEquals('http://embed/custom', $this->getProperty($service, 'embeddingUrl'));
             $this->assertEquals('model-z', $this->getProperty($service, 'model'));
             $this->assertEquals('base64', $this->getProperty($service, 'encodingFormat'));
-            $this->assertEquals('u777', $this->getProperty($service, 'user'));
+            $this->assertEquals('k777', $this->getProperty($service, 'apiKey'));
+            $this->assertEquals('https://example.org', $this->getProperty($service, 'siteUrl'));
+            $this->assertEquals('my-app', $this->getProperty($service, 'appName'));
         }
 
         /**
-         * Test factory default fallbacks.
+         * Test factory defaults for optional values.
          *
          * @return void
          */
@@ -84,7 +88,19 @@ namespace VuFindTest\Service\SemanticSearch {
 
             $container->get(ConfigManagerInterface::class)
                 ->method('getConfigObject')
-                ->willReturn(new Config([]));
+                ->willReturn(
+                    new Config(
+                        [
+                            'VectorSearch' => [
+                                'embedding_api_url' => 'http://embed/default',
+                                'model' => 'model-default',
+                                'embedding_api_key' => '',
+                                'embedding_site_url' => '',
+                                'embedding_app_name' => '',
+                            ],
+                        ]
+                    )
+                );
             $container->get('VuFindHttp\HttpService')
                 ->method('createClient')
                 ->willReturn($httpClient);
@@ -92,13 +108,29 @@ namespace VuFindTest\Service\SemanticSearch {
             $factory = new EmbeddingServiceFactory();
             $service = $factory($container, EmbeddingService::class);
 
-            $this->assertEquals('http://localhost:8000/embed', $this->getProperty($service, 'embeddingUrl'));
-            $this->assertEquals(
-                'sentence-transformers/paraphrase-multilingual-mpnet-base-v2',
-                $this->getProperty($service, 'model')
-            );
+            $this->assertEquals('http://embed/default', $this->getProperty($service, 'embeddingUrl'));
+            $this->assertEquals('model-default', $this->getProperty($service, 'model'));
             $this->assertEquals('float', $this->getProperty($service, 'encodingFormat'));
-            $this->assertEquals('user_123', $this->getProperty($service, 'user'));
+            $this->assertEquals('', $this->getProperty($service, 'apiKey'));
+            $this->assertEquals('', $this->getProperty($service, 'siteUrl'));
+            $this->assertEquals('', $this->getProperty($service, 'appName'));
+        }
+
+        /**
+         * Test factory throws when required fields are missing.
+         *
+         * @return void
+         */
+        public function testFactoryThrowsWithoutRequiredValues(): void
+        {
+            $container = new \VuFindTest\Container\MockContainer($this);
+            $container->get(ConfigManagerInterface::class)
+                ->method('getConfigObject')
+                ->willReturn(new Config([]));
+
+            $factory = new EmbeddingServiceFactory();
+            $this->expectException(\InvalidArgumentException::class);
+            $factory($container, EmbeddingService::class);
         }
     }
 }

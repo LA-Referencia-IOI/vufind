@@ -43,12 +43,12 @@ You must define the `/combined` handler and the `combined_query` component in yo
 
 ## 1. Configuring Hybrid Search
 
-### 1.1 `embedding.ini`
+### 1.1 `vectorsearch.ini`
 
-Create or edit `local/config/vufind/embedding.ini`. This shared file controls the embedding provider settings used by both Semantic Search and Hybrid Search.
+Create or edit `local/config/vufind/vectorsearch.ini`. This shared file controls the embedding provider settings used by both Semantic Search and Hybrid Search.
 
 ```ini
-[Embedding]
+[VectorSearch]
 embedding_api_url = "https://your-openai-compatible-provider/v1/embeddings"
 embedding_api_key = ""
 embedding_site_url = ""
@@ -109,6 +109,6 @@ ajax = true
 ## 2. Validation
 
 1. **Restart Solr**: To reload the `solrconfig.xml` changes.
-2. **Verify VuFind config**: Ensure `embedding_api_url` and `model` are explicitly set in `local/config/vufind/embedding.ini`.
+2. **Verify VuFind config**: Ensure `embedding_api_url` and `model` are explicitly set in `local/config/vufind/vectorsearch.ini`.
 3. **Reindex with Vectors**: Ensure your documents have embeddings in the `vector` field.
 4. **Verify in UI**: Navigate to `/HybridSearch/Results` and confirm that rank scores are displayed and results reflect both keyword matches and semantic similarity.

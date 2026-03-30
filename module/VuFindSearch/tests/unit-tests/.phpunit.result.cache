@@ -1,0 +1,1 @@
+{"version":2,"defects":[],"times":{"VuFindTest\\Backend\\SemanticSearch\\BackendTest::testRawJsonSearchBuildsVectorQuery":0.009,"VuFindTest\\Backend\\SemanticSearch\\BackendTest::testRawJsonSearchWithoutEmbeddingFallsBack":0.001,"VuFindTest\\Backend\\SemanticSearch\\BackendTest::testEmptyQuery":0}}

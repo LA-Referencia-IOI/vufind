@@ -70,9 +70,9 @@ class SemanticSearchBackendFactory extends AbstractSolrBackendFactory
     public function __invoke(ContainerInterface $sm, $name, ?array $options = null)
     {
         $this->setup($sm);
-        $config = $this->getService(ConfigManagerInterface::class)->getConfigObject('embedding');
-        if (isset($config->Embedding->default_core)) {
-            $this->defaultIndexName = $config->Embedding->default_core;
+        $config = $this->getService(ConfigManagerInterface::class)->getConfigObject('vectorsearch');
+        if (isset($config->VectorSearch->default_core)) {
+            $this->defaultIndexName = $config->VectorSearch->default_core;
         }
         return parent::__invoke($sm, $name, $options);
     }
@@ -86,17 +86,21 @@ class SemanticSearchBackendFactory extends AbstractSolrBackendFactory
      */
     protected function createBackend(Connector $connector)
     {
-        $config = $this->getService(ConfigManagerInterface::class)->getConfigObject('embedding');
-        $semanticConfig = $config->Embedding ?? new \VuFind\Config\Config();
-        $vectorField = $semanticConfig->vector_field ?? 'vector';
-        $minScore = $semanticConfig->min_score ?? 0.7;
+        $config = $this->getService(ConfigManagerInterface::class)->getConfigObject('vectorsearch');
+        $vectorSearchConfig = $config->VectorSearch ?? new \VuFind\Config\Config();
+        $vectorField = $vectorSearchConfig->vector_field ?? 'vector';
+        $minScore = $vectorSearchConfig->min_score ?? 0.0;
+        $topK = $vectorSearchConfig->topK ?? 10;
+        $queryParser = $vectorSearchConfig->query_parser ?? 'knn';
 
         $embeddingService = $this->getService(EmbeddingService::class);
         $backend = new Backend(
             $connector,
             $embeddingService,
             $vectorField,
-            $minScore
+            $minScore,
+            $topK,
+            $queryParser
         );
 
         $pageSize = $this->getIndexConfig('record_batch_size', 100);

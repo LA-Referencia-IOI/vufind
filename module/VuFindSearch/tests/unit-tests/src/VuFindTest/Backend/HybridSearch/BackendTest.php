@@ -19,6 +19,7 @@ namespace VuFindTest\Backend\HybridSearch {
 
     use PHPUnit\Framework\TestCase;
     use VuFindSearch\Backend\HybridSearch\Backend;
+    use VuFindSearch\Backend\Solr\Backend as SolrBackend;
     use VuFindSearch\Backend\Solr\Connector;
     use VuFind\Service\SemanticSearch\EmbeddingService;
     use VuFindSearch\Backend\Solr\QueryBuilder;
@@ -33,6 +34,16 @@ namespace VuFindTest\Backend\HybridSearch {
      */
     class BackendTest extends TestCase
     {
+        /**
+         * Verify backend inheritance from Solr backend.
+         *
+         * @return void
+         */
+        public function testBackendExtendsSolrBackend(): void
+        {
+            $this->assertTrue(is_subclass_of(Backend::class, SolrBackend::class));
+        }
+
         /**
          * Test hybrid search query generation when embedding is available.
          *
@@ -61,7 +72,7 @@ namespace VuFindTest\Backend\HybridSearch {
                     }),
                     $this->callback(function ($params) {
                         return $params instanceof ParamBag
-                            && $params->get('hl') === ['false'];
+                            && $params->get('hl') === ['true'];
                     })
                 )
                 ->willReturn('{}');
@@ -81,7 +92,7 @@ namespace VuFindTest\Backend\HybridSearch {
         }
 
         /**
-         * Test fallback behavior when embedding is unavailable.
+         * Test error behavior when embedding is unavailable.
          *
          * @return void
          */
@@ -100,7 +111,8 @@ namespace VuFindTest\Backend\HybridSearch {
 
             $backend = new Backend($connector, $embeddingService, 'my_vector', 0.7);
             $backend->setQueryBuilder($queryBuilder);
-            $this->assertNull($backend->rawJsonSearch(new Query('hello world'), 5, 10));
+            $this->expectException(\VuFindSearch\Backend\Exception\BackendException::class);
+            $backend->rawJsonSearch(new Query('hello world'), 5, 10);
         }
 
         /**
