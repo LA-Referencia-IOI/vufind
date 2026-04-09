@@ -153,10 +153,17 @@ class Backend extends SolrBackend
                     ],
                 ],
                 'vector' => [
-                    'knn' => [
-                        'f'     => $this->vectorField,
-                        'topK'  => $this->topKVector,
-                        'query' => $vectorString,
+                    'parent' => [
+                        'which' => '*:* -_nest_path_:*',
+                        'score' => 'max',
+                        'query' => [
+                            'knn' => [
+                                'f'          => $this->vectorField,
+                                'topK'       => $this->topKVector,
+                                'query'      => $vectorString,
+                                'childrenOf' => '*:* -_nest_path_:*',
+                            ],
+                        ],
                     ],
                 ],
             ],
