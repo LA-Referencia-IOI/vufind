@@ -129,12 +129,18 @@ class Backend extends SolrBackend
                 $vectorString
             );
         } else {
-            $semanticQuery = sprintf(
-                '{!knn f=%s topK=%d}%s',
-                $this->vectorField,
-                $this->topK,
-                $vectorString
+            // Multivalued vectors syntax (nested knn)
+            $params->set('allParents', '*:* -_nest_path_:*');
+            $params->set(
+                'children.q',
+                sprintf(
+                    '{!knn f=%s topK=%d childrenOf=$allParents}%s',
+                    $this->vectorField,
+                    $this->topK,
+                    $vectorString
+                )
             );
+            $semanticQuery = '{!parent which=$allParents score=max v=$children.q}';
         }
 
         // Build standard parameters

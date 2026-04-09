@@ -125,10 +125,13 @@
     <!-- add geo field to handle geographic search and display capabilities -->
     <fieldType name="geo" class="solr.SpatialRecursivePrefixTreeFieldType" distErrPct="0.025"
       maxDistErr="0.000009" distanceUnits="degrees" />
+    <fieldType name="_nest_path_" class="solr.NestPathField" />
   </types>
   <fields>
     <!-- Required by Solr -->
     <field name="_version_" type="long" indexed="false" stored="false" />
+    <field name="_root_" type="string" indexed="true" stored="false" docValues="false" />
+    <field name="_nest_path_" type="_nest_path_" indexed="true" stored="true" />
     <!-- Core Fields  -->
     <field name="id" type="string" indexed="true" stored="true" />
     <field name="fullrecord" type="string" indexed="false" stored="true" docValues="false" />
