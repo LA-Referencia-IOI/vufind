@@ -28,7 +28,7 @@ node_modules
 public/swagger-ui
 tests/phpcs.cache.json
 themes/bootstrap5/scss/vendor/bootstrap
-local/DirLocations.ini
-local/config/vufind.bak
-local/config/vufind/*
+local
 !local/config/vufind/README.txt
+themes/la-referencia
+themes/lareferencia
