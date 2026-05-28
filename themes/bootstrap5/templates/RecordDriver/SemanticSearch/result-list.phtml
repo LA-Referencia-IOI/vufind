@@ -51,7 +51,7 @@ if ($cover):
 
             <?php if ($score = $this->driver->getScore()): ?>
                 <div class="score">
-                    <strong><?= $this->transEsc('Score') ?>:</strong> <?= $this->escapeHtml($score) ?>
+                    <strong><?= $this->transEsc('Score') ?>:</strong> <?= $this->escapeHtml(number_format($score, 2)) ?>
                 </div>
             <?php endif; ?>
 
@@ -107,26 +107,26 @@ if ($cover):
                     $i = 0;
                     foreach ($dedupData as $source => $current) {
                         if (++$i == 1) {
-                            ?><span class="currentSource"><a
+                    ?><span class="currentSource"><a
                                     href="<?= $this->escapeHtmlAttr($recordLinker->getUrl($this->driver)) ?>"><?= $this->transEsc("source_$source", [], $source) ?></a></span>
                             <?php
                         } else {
                             if ($i == 2) {
-                                ?> <span class="otherSources">(<?= $this->transEsc('Other Sources') ?>:
+                            ?> <span class="otherSources">(<?= $this->transEsc('Other Sources') ?>:
                                     <?php
-                            } else {
-                                ?>,
-                                    <?php
-                            }
-                            ?><a href="<?= $this->escapeHtmlAttr($recordLinker->getUrl($current['id'])) ?>"><?= $this->transEsc("source_$source", [], $source) ?></a>
+                                } else {
+                                    ?>,
                                 <?php
+                                }
+                                ?><a href="<?= $this->escapeHtmlAttr($recordLinker->getUrl($current['id'])) ?>"><?= $this->transEsc("source_$source", [], $source) ?></a>
+                                <?php
+                            }
                         }
-                    }
-                    if ($i > 1) {
-                        ?>)
-                        </span>
-                        <?php
-                    } ?>
+                        if ($i > 1) {
+                                ?>)
+                                </span>
+                            <?php
+                        } ?>
                 </div>
             <?php endif; ?>
 
@@ -253,7 +253,7 @@ if ($cover):
                             <?= $this->icon('tree-context', 'icon-link__icon') ?>
                             <span class="icon-link__label"><?= $this->transEsc('hierarchy_view_context') ?>
                                 <?php if (count($trees) > 1): ?>: <?= $this->escapeHtml($hierarchyTitle) ?>
-                                <?php endif; ?>
+                            <?php endif; ?>
                             </span>
                         </a>
                     </div>
@@ -262,11 +262,11 @@ if ($cover):
 
             <?php if ($this->driver->tryMethod('explainEnabled')): ?>
                 <?=
-                    $this->record($this->driver)->renderTemplate('result-list-explain.phtml', [
-                        'driver' => $this->driver,
-                        'request' => $this->request,
-                        'result' => $this->result,
-                    ]);
+                $this->record($this->driver)->renderTemplate('result-list-explain.phtml', [
+                    'driver' => $this->driver,
+                    'request' => $this->request,
+                    'result' => $this->result,
+                ]);
                 ?>
             <?php endif; ?>
 
