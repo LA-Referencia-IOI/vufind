@@ -51,7 +51,7 @@ This makes hybrid retrieval a separate route and backend identity rather than a 
 
 ### 3.2 Hybrid Backend Factory
 
-`VuFind\Search\Factory\HybridSearchBackendFactory` loads shared vector-search settings from `vectorsearch.ini` and wires them into the backend.
+`VuFind\Search\Factory\HybridSearchBackendFactory` loads shared vector-search settings from `embedding.ini` and wires them into the backend.
 
 The relevant configuration currently includes:
 
@@ -273,7 +273,7 @@ The current schema defines both:
 The local runtime configuration currently points search to the multi-valued field:
 
 ```ini
-[VectorSearch]
+[Embedding]
 vector_field = "vector_multivalued"
 ```
 
@@ -402,7 +402,7 @@ Important implications:
 The active local override is:
 
 ```ini
-[VectorSearch]
+[Embedding]
 embedding_api_url = "http://172.16.115.105:11434/v1/embeddings"
 vector_field      = "vector_multivalued"
 topK              = 20
@@ -471,12 +471,12 @@ Minimum current requirements:
 </searchComponent>
 ```
 
-### 9.3 Recommended `vectorsearch.ini`
+### 9.3 Recommended `embedding.ini`
 
 For a clear and explicit hybrid setup, use:
 
 ```ini
-[VectorSearch]
+[Embedding]
 embedding_api_url = "http://your-embedding-service/v1/embeddings"
 embedding_api_key = ""
 embedding_site_url = ""

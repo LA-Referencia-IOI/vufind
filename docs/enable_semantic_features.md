@@ -36,12 +36,12 @@ This field stores the document embeddings:
 
 To enable the Semantic Search feature, you will need to update a few configuration files.
 
-### 1.1 `vectorsearch.ini`
+### 1.1 `embedding.ini`
 
-Create or edit the `local/config/vufind/vectorsearch.ini` file and fill it with valid values for your environment:
+Create or edit the `local/config/vufind/embedding.ini` file and fill it with valid values for your environment:
 
 ```ini
-[VectorSearch]
+[Embedding]
 embedding_api_url = "https://your-openai-compatible-provider/v1/embeddings"
 embedding_api_key = ""
 embedding_site_url = ""
@@ -114,7 +114,7 @@ vector_field = "vector"
 topK = 5
 ```
 
-This file is used by the `SemanticSimilar` related-items module. The embedding provider configuration itself is still read from `vectorsearch.ini`.
+This file is used by the `SemanticSimilar` related-items module. The embedding provider configuration itself is still read from `embedding.ini`.
 
 ### 2.2 `config.ini`
 
