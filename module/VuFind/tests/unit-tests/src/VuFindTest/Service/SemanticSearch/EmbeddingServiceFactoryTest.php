@@ -44,11 +44,11 @@ namespace VuFindTest\Service\SemanticSearch {
             $httpClient = $this->createMock(HttpClient::class);
 
             $configManager = $container->get(ConfigManagerInterface::class);
-            $configManager->method('getConfigObject')->with('vectorsearch')
+            $configManager->method('getConfigObject')->with('embedding')
                 ->willReturn(
                     new Config(
                         [
-                            'VectorSearch' => [
+                            'Embedding' => [
                                 'embedding_api_url' => 'http://embed/custom',
                                 'model' => 'model-z',
                                 'encoding_format' => 'base64',
@@ -91,7 +91,7 @@ namespace VuFindTest\Service\SemanticSearch {
                 ->willReturn(
                     new Config(
                         [
-                            'VectorSearch' => [
+                            'Embedding' => [
                                 'embedding_api_url' => 'http://embed/default',
                                 'model' => 'model-default',
                                 'embedding_api_key' => '',
