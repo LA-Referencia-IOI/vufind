@@ -134,10 +134,11 @@ class EmbeddingService implements LoggerAwareInterface
     {
         $startTime = microtime(true);
         try {
+            $normalizedText = $this->normalizeText($text);
             $this->httpClient->setUri($this->embeddingUrl);
             $this->httpClient->setMethod('POST');
             $payload = [
-                'input'           => $text,
+                'input'           => $normalizedText,
                 'model'           => $this->model,
                 'encoding_format' => $this->encodingFormat,
             ];
@@ -179,5 +180,42 @@ class EmbeddingService implements LoggerAwareInterface
             $this->log('error', 'Error calling embedding API: ' . $e->getMessage());
         }
         return null;
+    }
+
+    /**
+     * Normalize text before sending to the embedding API.
+     *
+     * @param string $input Input text
+     *
+     * @return string
+     */
+    private function normalizeText(string $input): string
+    {
+        if ('' === trim($input)) {
+            return '';
+        }
+
+        $normalized = trim($input);
+
+        // Join words split by hyphen + line break (e.g. multi-\nlingual).
+        $normalized = preg_replace('/-\h*\R\h*/u', '', $normalized) ?? $normalized;
+
+        // Lowercase with UTF-8 support.
+        $normalized = function_exists('mb_strtolower')
+            ? mb_strtolower($normalized, 'UTF-8')
+            : strtolower($normalized);
+
+        // Replace remaining line breaks with spaces.
+        $normalized = preg_replace('/\R+/u', ' ', $normalized) ?? $normalized;
+
+        // Collapse multiple spaces/tabs/newlines.
+        $normalized = preg_replace('/\s+/u', ' ', $normalized) ?? $normalized;
+
+        // Unicode normalization (canonical representation), when intl is available.
+        if (class_exists('Normalizer')) {
+            $normalized = \Normalizer::normalize($normalized, \Normalizer::FORM_C) ?? $normalized;
+        }
+
+        return trim($normalized);
     }
 }
