@@ -120,6 +120,9 @@ class Backend extends SolrBackend
             throw new BackendException('Problem connecting to Embedding API.');
         }
 
+        // Multivalued vectors syntax (nested knn)
+        $params->set('allParents', '*:* -_nest_path_:*');
+
         $vectorString = '[' . implode(',', $embeddingArray) . ']';
         if ($this->queryParser === 'vectorSimilarity') {
             $semanticQuery = sprintf(
@@ -129,8 +132,6 @@ class Backend extends SolrBackend
                 $vectorString
             );
         } else {
-            // Multivalued vectors syntax (nested knn)
-            $params->set('allParents', '*:* -_nest_path_:*');
             $params->set(
                 'children.q',
                 sprintf(
