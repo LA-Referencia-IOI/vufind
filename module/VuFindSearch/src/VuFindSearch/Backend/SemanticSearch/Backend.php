@@ -120,16 +120,18 @@ class Backend extends SolrBackend
             throw new BackendException('Problem connecting to Embedding API.');
         }
 
-        // Multivalued vectors syntax (nested knn)
-        $params->set('allParents', '*:* -_nest_path_:*');
 
         $vectorString = '[' . implode(',', $embeddingArray) . ']';
+
         if ($this->queryParser === 'vectorSimilarity') {
-            $semanticQuery = sprintf(
-                '{!vectorSimilarity f=%s minReturn=%f}%s',
-                $this->vectorField,
-                $this->minScore,
-                $vectorString
+            $params->set(
+                'children.q',
+                sprintf(
+                    '{!vectorSimilarity f=%s minReturn=%f}%s',
+                    $this->vectorField,
+                    $this->minScore,
+                    $vectorString
+                )
             );
         } else {
             $params->set(
@@ -141,8 +143,11 @@ class Backend extends SolrBackend
                     $vectorString
                 )
             );
-            $semanticQuery = '{!parent which=$allParents score=max v=$children.q}';
         }
+
+        // Multivalued vectors syntax (nested knn)
+        $params->set('allParents', '*:* -_nest_path_:*');
+        $semanticQuery = '{!parent which=$allParents score=max v=$children.q}';
 
         // Build standard parameters
         $params->mergeWith($this->getQueryBuilder()->build($query, $params));
