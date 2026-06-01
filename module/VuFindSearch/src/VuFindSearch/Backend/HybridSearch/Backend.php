@@ -57,6 +57,13 @@ class Backend extends SolrBackend
     protected $topKVector;
 
     /**
+     * Whether vector field is multivalued/nested.
+     *
+     * @var bool
+     */
+    protected $vectorMultivalued;
+
+    /**
      * Constructor.
      *
      * @param \VuFindSearch\Backend\Solr\Connector $connector  SOLR connector
@@ -67,6 +74,7 @@ class Backend extends SolrBackend
      * @param float                                $minScore   Minimum score
      * @param int                                  $rrfK       RRF K parameter
      * @param int                                  $topKVector Vector top K for hybrid
+     * @param bool                                 $vectorMultivalued Whether vector field is multivalued
      * @param string                               $model      Embedding model
      * @param string                               $encoding   Encoding format
      * @param string                               $user       User identifier
@@ -77,7 +85,8 @@ class Backend extends SolrBackend
         $vectorFld,
         $minScore,
         $rrfK = 60,
-        $topKVector = 10
+        $topKVector = 10,
+        $vectorMultivalued = true
     ) {
         parent::__construct($connector);
         $this->embeddingService = $embeddingService;
@@ -85,6 +94,7 @@ class Backend extends SolrBackend
         $this->minScore = $minScore;
         $this->rrfK = $rrfK;
         $this->topKVector = $topKVector;
+        $this->vectorMultivalued = (bool)$vectorMultivalued;
     }
 
     /**
@@ -146,6 +156,7 @@ class Backend extends SolrBackend
         // Construct Combined Query DSL
         $allParents = '*:* -_nest_path_:*';
         $vectorString = '[' . implode(',', $embeddingArray) . ']';
+        $vectorQuery = $this->buildVectorQueryNode($vectorString, $allParents);
         $combinedQuery = [
             'queries' => [
                 'lexical' => [
@@ -153,20 +164,7 @@ class Backend extends SolrBackend
                         'query' => $lexicalQ,
                     ],
                 ],
-                'vector' => [
-                    'parent' => [
-                        'which' => $allParents,
-                        'score' => 'max',
-                        'query' => [
-                            'knn' => [
-                                'f'          => $this->vectorField,
-                                'topK'       => $this->topKVector,
-                                'query'      => $vectorString,
-                                'childrenOf' => $allParents,
-                            ],
-                        ],
-                    ],
-                ],
+                'vector' => $vectorQuery,
             ],
             'limit'  => $limit,
             'offset' => $offset,
@@ -196,5 +194,41 @@ class Backend extends SolrBackend
         $this->log('debug', sprintf('HybridSearch: Solr combined search time: %.4f seconds', microtime(true) - $startTime));
 
         return $response;
+    }
+
+    /**
+     * Build vector query node based on vector field cardinality.
+     *
+     * @param string $vectorString Vector literal for Solr parsers
+     * @param string $allParents   Parent selector used for nested vectors
+     *
+     * @return array
+     */
+    protected function buildVectorQueryNode(string $vectorString, string $allParents): array
+    {
+        if ($this->vectorMultivalued) {
+            return [
+                'parent' => [
+                    'which' => $allParents,
+                    'score' => 'max',
+                    'query' => [
+                        'knn' => [
+                            'f'          => $this->vectorField,
+                            'topK'       => $this->topKVector,
+                            'query'      => $vectorString,
+                            'childrenOf' => $allParents,
+                        ],
+                    ],
+                ],
+            ];
+        }
+
+        return [
+            'knn' => [
+                'f'     => $this->vectorField,
+                'topK'  => $this->topKVector,
+                'query' => $vectorString,
+            ],
+        ];
     }
 }
