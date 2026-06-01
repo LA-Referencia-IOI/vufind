@@ -144,6 +144,7 @@ class Backend extends SolrBackend
         $finalFl = implode(',', (array)$params->get('fl'));
 
         // Construct Combined Query DSL
+        $allParents = '*:* -_nest_path_:*';
         $vectorString = '[' . implode(',', $embeddingArray) . ']';
         $combinedQuery = [
             'queries' => [
@@ -154,14 +155,14 @@ class Backend extends SolrBackend
                 ],
                 'vector' => [
                     'parent' => [
-                        'which' => '*:* -_nest_path_:*',
+                        'which' => $allParents,
                         'score' => 'max',
                         'query' => [
                             'knn' => [
                                 'f'          => $this->vectorField,
                                 'topK'       => $this->topKVector,
                                 'query'      => $vectorString,
-                                'childrenOf' => '*:* -_nest_path_:*',
+                                'childrenOf' => $allParents,
                             ],
                         ],
                     ],
