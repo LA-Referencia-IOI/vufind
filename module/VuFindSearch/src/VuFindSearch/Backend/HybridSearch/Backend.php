@@ -16,6 +16,7 @@ use function json_decode;
 use function json_encode;
 use function max;
 use function sprintf;
+use function str_starts_with;
 
 /**
  * SOLR Hybrid search backend with RRF.
@@ -161,6 +162,20 @@ class Backend extends SolrBackend
         // Construct Combined Query DSL
         $allParents = '*:* -_nest_path_:*';
         $vectorString = '[' . implode(',', $embeddingArray) . ']';
+
+        // Alternative safe path: Solr 10 beta can crash when facet.* is used
+        // with /combined. For faceted requests, execute hybrid on /select.
+        if ($this->hasFacetParams($params)) {
+            return $this->rawHybridSelectFallback(
+                $params,
+                $lexicalQ,
+                $vectorString,
+                $allParents,
+                (int)$offset,
+                (int)$limit
+            );
+        }
+
         $vectorQuery = $this->buildVectorQueryNode($vectorString, $allParents);
         $combinedQuery = [
             'queries' => [
@@ -369,5 +384,88 @@ class Backend extends SolrBackend
         $docsCount = is_array($probeDocs) ? count($probeDocs) : 0;
         $numFound = (int)($probeData['response']['numFound'] ?? 0);
         return max($docsCount, $numFound);
+    }
+
+    /**
+     * Check if request contains classic facet params.
+     *
+     * @param ParamBag $params Request params
+     *
+     * @return bool
+     */
+    protected function hasFacetParams(ParamBag $params): bool
+    {
+        foreach (array_keys($params->getArrayCopy()) as $paramName) {
+            if ($paramName === 'facet' || str_starts_with($paramName, 'facet.')) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Hybrid fallback using /select for faceted requests.
+     *
+     * @param ParamBag $params       Request params
+     * @param string   $lexicalQ     Lexical query
+     * @param string   $vectorString Vector literal
+     * @param string   $allParents   Parent selector for nested vectors
+     * @param int      $offset       Start offset
+     * @param int      $limit        Page size
+     *
+     * @return string
+     */
+    protected function rawHybridSelectFallback(
+        ParamBag $params,
+        string $lexicalQ,
+        string $vectorString,
+        string $allParents,
+        int $offset,
+        int $limit
+    ): string {
+        $fallbackParams = new ParamBag($params->getArrayCopy());
+        $this->injectResponseWriter($fallbackParams);
+        $fallbackParams->set('rows', $limit);
+        $fallbackParams->set('start', $offset);
+
+        $vectorQ = $this->buildVectorQueryString($fallbackParams, $vectorString, $allParents);
+        $fallbackParams->set('lexical.q', $lexicalQ);
+        $fallbackParams->set('vector.q', $vectorQ);
+        $fallbackParams->set('q', '{!bool should=$lexical.q should=$vector.q minimumShouldMatch=1}');
+        $fallbackParams->set('hl', 'true');
+        $fallbackParams->set('hl.q', $lexicalQ);
+
+        $startTime = microtime(true);
+        $response = $this->connector->search($fallbackParams);
+        $this->log('debug', sprintf('HybridSearch: Solr /select fallback time: %.4f seconds', microtime(true) - $startTime));
+        return $response;
+    }
+
+    /**
+     * Build vector query string for /select hybrid fallback.
+     *
+     * @param ParamBag $params       Request params (may receive helper params)
+     * @param string   $vectorString Vector literal
+     * @param string   $allParents   Parent selector for nested vectors
+     *
+     * @return string
+     */
+    protected function buildVectorQueryString(ParamBag $params, string $vectorString, string $allParents): string
+    {
+        if ($this->vectorMultivalued) {
+            $params->set('allParents', $allParents);
+            $params->set(
+                'children.q',
+                sprintf(
+                    '{!knn f=%s topK=%d childrenOf=$allParents}%s',
+                    $this->vectorField,
+                    $this->topK,
+                    $vectorString
+                )
+            );
+            return '{!parent which=$allParents score=max v=$children.q}';
+        }
+
+        return sprintf('{!knn f=%s topK=%d}%s', $this->vectorField, $this->topK, $vectorString);
     }
 }
