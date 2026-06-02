@@ -61,8 +61,8 @@ class HybridSearchBackendFactory extends AbstractSolrBackendFactory
         $vectorField = $embeddingConfig->vector_field ?? 'vector';
         $minScore = $embeddingConfig->min_score ?? 0.7;
         $rrfK = $embeddingConfig->rrf_k ?? 60;
-        $topKVector = $embeddingConfig->topK_vector ?? 10;
-        $vectorMultivalued = $this->getEmbeddingBool($embeddingConfig, 'vector_multivalued', true);
+        $topK = $embeddingConfig->topK ?? 10;
+        $vectorMultivalued = $this->getEmbeddingBool($embeddingConfig, 'vector_multivalued', false);
 
         $embeddingService = $this->getService(EmbeddingService::class);
 
@@ -72,7 +72,7 @@ class HybridSearchBackendFactory extends AbstractSolrBackendFactory
             $vectorField,
             $minScore,
             $rrfK,
-            $topKVector,
+            $topK,
             $vectorMultivalued
         );
 
