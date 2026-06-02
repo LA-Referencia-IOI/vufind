@@ -62,7 +62,6 @@ class HybridSearchBackendFactory extends AbstractSolrBackendFactory
         $minScore = $embeddingConfig->min_score ?? 0.7;
         $rrfK = $embeddingConfig->rrf_k ?? 60;
         $topK = $embeddingConfig->topK ?? 10;
-        $combinedLimit = isset($embeddingConfig->combined_limit) ? (int)$embeddingConfig->combined_limit : 10;
         $vectorMultivalued = $this->getEmbeddingBool($embeddingConfig, 'vector_multivalued', false);
 
         $embeddingService = $this->getService(EmbeddingService::class);
@@ -75,7 +74,6 @@ class HybridSearchBackendFactory extends AbstractSolrBackendFactory
             $rrfK,
             $topK,
             $vectorMultivalued,
-            $combinedLimit
         );
 
         $pageSize = $this->getIndexConfig('record_batch_size', 100);

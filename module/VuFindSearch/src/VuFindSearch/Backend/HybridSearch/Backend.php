@@ -69,12 +69,6 @@ class Backend extends SolrBackend
      */
     protected $vectorMultivalued;
 
-    /**
-     * Optional fixed limit for /combined queries (0 = use request limit).
-     *
-     * @var int
-     */
-    protected $combinedLimit;
 
     /**
      * Constructor.
@@ -88,7 +82,6 @@ class Backend extends SolrBackend
      * @param int                                  $rrfK       RRF K parameter
      * @param int                                  $topK       Top K for hybrid
      * @param bool                                 $vectorMultivalued Whether vector field is multivalued
-     * @param int                                  $combinedLimit Fixed /combined limit (0 = use request limit)
      * @param string                               $model      Embedding model
      * @param string                               $encoding   Encoding format
      * @param string                               $user       User identifier
@@ -101,7 +94,6 @@ class Backend extends SolrBackend
         $rrfK,
         $topK,
         $vectorMultivalued,
-        $combinedLimit = 0
     ) {
         parent::__construct($connector);
         $this->embeddingService = $embeddingService;
@@ -110,7 +102,6 @@ class Backend extends SolrBackend
         $this->rrfK = $rrfK;
         $this->topK = $topK;
         $this->vectorMultivalued = (bool)$vectorMultivalued;
-        $this->combinedLimit = (int)$combinedLimit;
     }
 
     /**
@@ -184,7 +175,7 @@ class Backend extends SolrBackend
                 ],
                 'vector' => $vectorQuery,
             ],
-            'limit'  => $this->combinedLimit > 0 ? $this->combinedLimit : $limit,
+            'limit'  => $limit,
             'offset' => $offset,
             'fields' => $finalFl,
             'params' => [
@@ -201,8 +192,8 @@ class Backend extends SolrBackend
         $params->set('hl.q', $lexicalQ);
 
         // debug log the combined query and params
-        // $params->set('debugQuery', "on");
-        // $params->set('debug', "results");
+        $params->set('debugQuery', "on");
+        $params->set('debug', "results");
 
         // Add filters from original params if present
         $fq = $params->get('fq');
