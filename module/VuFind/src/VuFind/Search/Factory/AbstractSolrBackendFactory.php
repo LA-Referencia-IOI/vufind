@@ -287,6 +287,33 @@ abstract class AbstractSolrBackendFactory extends AbstractBackendFactory
     }
 
     /**
+     * Get embedding configuration section.
+     *
+     * @return Config
+     */
+    protected function getEmbeddingConfig(): Config
+    {
+        $embeddingConfig = $this->configManager->getConfigObject('embedding')->Embedding;
+        return $embeddingConfig ?? new Config();
+    }
+
+    /**
+     * Read a boolean setting from embedding configuration.
+     *
+     * @param Config $embeddingConfig Embedding configuration section
+     * @param string $name            Setting name
+     * @param bool   $default         Default value
+     *
+     * @return bool
+     */
+    protected function getEmbeddingBool(Config $embeddingConfig, string $name, bool $default = true): bool
+    {
+        $rawValue = $embeddingConfig->$name ?? $default;
+        $parsed = filter_var($rawValue, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+        return null === $parsed ? (bool)$rawValue : $parsed;
+    }
+
+    /**
      * Create the SOLR backend.
      *
      * @param Connector $connector Connector

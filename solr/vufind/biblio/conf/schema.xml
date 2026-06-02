@@ -119,7 +119,7 @@
     <!-- Required by Solr -->
     <field name="_version_" type="long" indexed="false" stored="false"/>
     <field name="_root_" type="string" indexed="true" stored="false" docValues="false"/>
-     <!-- Vector Fields  -->
+    <!-- Vector Fields  -->
     <field name="_nest_path_" type="_nest_path_" indexed="true" stored="true"/>
     <field name="vector" type="knn_vector" indexed="true" stored="false"/>
     <field name="vector_multivalued" type="knn_vector" indexed="true" stored="false" multiValued="true"/>
@@ -272,6 +272,7 @@
   <copyField source="author_corporate" dest="author_facet"/>
   <copyField source="publisher" dest="publisherStr"/>
   <copyField source="topic" dest="topic_unstemmed"/>
+  <copyField source="topic" dest="topic_facet"/>
   <copyField source="allfields" dest="allfields_unstemmed"/>
   <copyField source="fulltext" dest="fulltext_unstemmed"/>
   <!-- CopyFields for Alphabetic Browse -->

@@ -57,6 +57,13 @@ class Backend extends SolrBackend
     protected $queryParser;
 
     /**
+     * Whether vector field is multivalued/nested.
+     *
+     * @var bool
+     */
+    protected $vectorMultivalued;
+
+    /**
      * Constructor.
      *
      * @param Connector        $connector        SOLR connector
@@ -65,6 +72,7 @@ class Backend extends SolrBackend
      * @param float            $minScore         Minimum score
      * @param int              $topK             Top K results
      * @param string           $queryParser      Query parser type
+     * @param bool             $vectorMultivalued Whether vector field is multivalued
      */
     public function __construct(
         Connector $connector,
@@ -72,7 +80,8 @@ class Backend extends SolrBackend
         $vectorField,
         $minScore,
         $topK = 10,
-        $queryParser = 'knn'
+        $queryParser = 'knn',
+        $vectorMultivalued = true
     ) {
         parent::__construct($connector);
         $this->embeddingService = $embeddingService;
@@ -80,6 +89,7 @@ class Backend extends SolrBackend
         $this->minScore = $minScore;
         $this->topK = $topK;
         $this->queryParser = $queryParser;
+        $this->vectorMultivalued = (bool)$vectorMultivalued;
     }
 
     /**
@@ -123,31 +133,7 @@ class Backend extends SolrBackend
 
         $vectorString = '[' . implode(',', $embeddingArray) . ']';
 
-        if ($this->queryParser === 'vectorSimilarity') {
-            $params->set(
-                'children.q',
-                sprintf(
-                    '{!vectorSimilarity f=%s minReturn=%f}%s',
-                    $this->vectorField,
-                    $this->minScore,
-                    $vectorString
-                )
-            );
-        } else {
-            $params->set(
-                'children.q',
-                sprintf(
-                    '{!knn f=%s topK=%d childrenOf=$allParents}%s',
-                    $this->vectorField,
-                    $this->topK,
-                    $vectorString
-                )
-            );
-        }
-
-        // Multivalued vectors syntax (nested knn)
-        $params->set('allParents', '*:* -_nest_path_:*');
-        $semanticQuery = '{!parent which=$allParents score=max v=$children.q}';
+        $semanticQuery = $this->buildSemanticQuery($params, $vectorString);
 
         // Build standard parameters
         $params->mergeWith($this->getQueryBuilder()->build($query, $params));
@@ -183,5 +169,59 @@ class Backend extends SolrBackend
         $this->log('debug', sprintf('SemanticSearch: Solr search time: %.4f seconds', microtime(true) - $startTime));
 
         return $response;
+    }
+
+    /**
+     * Build semantic query based on vector field cardinality.
+     *
+     * @param ParamBag $params       Search params
+     * @param string   $vectorString Vector literal for Solr parsers
+     *
+     * @return string
+     */
+    protected function buildSemanticQuery(ParamBag $params, string $vectorString): string
+    {
+        if ($this->vectorMultivalued) {
+            if ($this->queryParser === 'vectorSimilarity') {
+                $params->set(
+                    'children.q',
+                    sprintf(
+                        '{!vectorSimilarity f=%s minReturn=%f}%s',
+                        $this->vectorField,
+                        $this->minScore,
+                        $vectorString
+                    )
+                );
+            } else {
+                $params->set(
+                    'children.q',
+                    sprintf(
+                        '{!knn f=%s topK=%d childrenOf=$allParents}%s',
+                        $this->vectorField,
+                        $this->topK,
+                        $vectorString
+                    )
+                );
+            }
+
+            $params->set('allParents', '*:* -_nest_path_:*');
+            return '{!parent which=$allParents score=max v=$children.q}';
+        }
+
+        if ($this->queryParser === 'vectorSimilarity') {
+            return sprintf(
+                '{!vectorSimilarity f=%s minReturn=%f}%s',
+                $this->vectorField,
+                $this->minScore,
+                $vectorString
+            );
+        }
+
+        return sprintf(
+            '{!knn f=%s topK=%d}%s',
+            $this->vectorField,
+            $this->topK,
+            $vectorString
+        );
     }
 }

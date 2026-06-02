@@ -57,12 +57,12 @@ class HybridSearchBackendFactory extends AbstractSolrBackendFactory
      */
     protected function createBackend(Connector $connector)
     {
-        $config = $this->getService(ConfigManagerInterface::class)->getConfigObject('embedding');
-        $embeddingConfig = $config->Embedding ?? new \VuFind\Config\Config();
+        $embeddingConfig = $this->getEmbeddingConfig();
         $vectorField = $embeddingConfig->vector_field ?? 'vector';
         $minScore = $embeddingConfig->min_score ?? 0.7;
         $rrfK = $embeddingConfig->rrf_k ?? 60;
-        $topKVector = $embeddingConfig->topK_vector ?? 10;
+        $topK = $embeddingConfig->topK ?? 10;
+        $vectorMultivalued = $this->getEmbeddingBool($embeddingConfig, 'vector_multivalued', false);
 
         $embeddingService = $this->getService(EmbeddingService::class);
 
@@ -72,7 +72,8 @@ class HybridSearchBackendFactory extends AbstractSolrBackendFactory
             $vectorField,
             $minScore,
             $rrfK,
-            $topKVector
+            $topK,
+            $vectorMultivalued
         );
 
         $pageSize = $this->getIndexConfig('record_batch_size', 100);

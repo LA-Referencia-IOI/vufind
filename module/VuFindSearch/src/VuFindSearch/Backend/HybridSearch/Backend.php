@@ -9,8 +9,14 @@ use VuFind\Service\SemanticSearch\EmbeddingService;
 use VuFindSearch\Query\AbstractQuery;
 use VuFindSearch\Query\Query;
 
+use function count;
+use function in_array;
+use function is_array;
+use function json_decode;
 use function json_encode;
+use function max;
 use function sprintf;
+use function str_starts_with;
 
 /**
  * SOLR Hybrid search backend with RRF.
@@ -54,7 +60,14 @@ class Backend extends SolrBackend
      *
      * @var int
      */
-    protected $topKVector;
+    protected $topK;
+
+    /**
+     * Whether vector field is multivalued/nested.
+     *
+     * @var bool
+     */
+    protected $vectorMultivalued;
 
     /**
      * Constructor.
@@ -66,7 +79,8 @@ class Backend extends SolrBackend
      * @param int                                  $topK       Standard top K
      * @param float                                $minScore   Minimum score
      * @param int                                  $rrfK       RRF K parameter
-     * @param int                                  $topKVector Vector top K for hybrid
+     * @param int                                  $topK       Top K for hybrid
+     * @param bool                                 $vectorMultivalued Whether vector field is multivalued
      * @param string                               $model      Embedding model
      * @param string                               $encoding   Encoding format
      * @param string                               $user       User identifier
@@ -76,15 +90,17 @@ class Backend extends SolrBackend
         EmbeddingService $embeddingService,
         $vectorFld,
         $minScore,
-        $rrfK = 60,
-        $topKVector = 10
+        $rrfK,
+        $topK,
+        $vectorMultivalued
     ) {
         parent::__construct($connector);
         $this->embeddingService = $embeddingService;
         $this->vectorField = $vectorFld;
         $this->minScore = $minScore;
         $this->rrfK = $rrfK;
-        $this->topKVector = $topKVector;
+        $this->topK = $topK;
+        $this->vectorMultivalued = (bool)$vectorMultivalued;
     }
 
     /**
@@ -144,7 +160,23 @@ class Backend extends SolrBackend
         $finalFl = implode(',', (array)$params->get('fl'));
 
         // Construct Combined Query DSL
+        $allParents = '*:* -_nest_path_:*';
         $vectorString = '[' . implode(',', $embeddingArray) . ']';
+
+        // Alternative safe path: Solr 10 beta can crash when facet.* is used
+        // with /combined. For faceted requests, execute hybrid on /select.
+        if ($this->hasFacetParams($params)) {
+            return $this->rawHybridSelectFallback(
+                $params,
+                $lexicalQ,
+                $vectorString,
+                $allParents,
+                (int)$offset,
+                (int)$limit
+            );
+        }
+
+        $vectorQuery = $this->buildVectorQueryNode($vectorString, $allParents);
         $combinedQuery = [
             'queries' => [
                 'lexical' => [
@@ -152,20 +184,7 @@ class Backend extends SolrBackend
                         'query' => $lexicalQ,
                     ],
                 ],
-                'vector' => [
-                    'parent' => [
-                        'which' => '*:* -_nest_path_:*',
-                        'score' => 'max',
-                        'query' => [
-                            'knn' => [
-                                'f'          => $this->vectorField,
-                                'topK'       => $this->topKVector,
-                                'query'      => $vectorString,
-                                'childrenOf' => '*:* -_nest_path_:*',
-                            ],
-                        ],
-                    ],
-                ],
+                'vector' => $vectorQuery,
             ],
             'limit'  => $limit,
             'offset' => $offset,
@@ -194,6 +213,259 @@ class Backend extends SolrBackend
         $response = $this->connector->postJson('combined', json_encode($combinedQuery), $params);
         $this->log('debug', sprintf('HybridSearch: Solr combined search time: %.4f seconds', microtime(true) - $startTime));
 
+        // Solr /combined beta can return unstable numFound values depending on
+        // limit/window. Use a lexical rows=0 count as stable lower bound.
+        $lexicalCount = $this->getLexicalCount($lexicalQ, $fq, $allParents);
+        // Probe a wider hybrid window to capture additional fused docs when
+        // /combined reports numFound tied to the request limit.
+        $hybridCount = $this->getHybridCountBound($combinedQuery, $params, (int)$limit);
+
+        // Defensive normalization: keep response metadata consistent with the
+        // returned docs so VuFind counters and rendered list stay in sync.
+        $response = $this->normalizeCombinedResponse(
+            $response,
+            (int)$offset,
+            (int)$limit,
+            $lexicalCount,
+            $hybridCount
+        );
+
         return $response;
+    }
+
+    /**
+     * Build vector query node based on vector field cardinality.
+     *
+     * @param string $vectorString Vector literal for Solr parsers
+     * @param string $allParents   Parent selector used for nested vectors
+     *
+     * @return array
+     */
+    protected function buildVectorQueryNode(string $vectorString, string $allParents): array
+    {
+        if ($this->vectorMultivalued) {
+            return [
+                'parent' => [
+                    'which' => $allParents,
+                    'score' => 'max',
+                    'query' => [
+                        'knn' => [
+                            'f'          => $this->vectorField,
+                            'topK'       => $this->topK,
+                            'query'      => $vectorString,
+                            'childrenOf' => $allParents,
+                        ],
+                    ],
+                ],
+            ];
+        }
+
+        return [
+            'knn' => [
+                'f'     => $this->vectorField,
+                'topK'  => $this->topK,
+                'query' => $vectorString,
+            ],
+        ];
+    }
+
+    /**
+     * Normalize /combined response consistency.
+     *
+     * Some Solr beta responses may return a docs array bigger than the page
+     * limit and/or a numFound lower than visible docs. This causes VuFind to
+     * show contradictory counters versus rendered records.
+     *
+     * @param string   $response     Raw Solr JSON response
+     * @param int      $offset       Requested offset
+     * @param int      $limit        Requested limit
+     * @param int|null $lexicalCount Optional lexical rows=0 total
+     * @param int|null $hybridCount  Optional wider-window hybrid total bound
+     *
+     * @return string
+     */
+    protected function normalizeCombinedResponse(
+        string $response,
+        int $offset,
+        int $limit,
+        ?int $lexicalCount = null,
+        ?int $hybridCount = null
+    ): string {
+        $data = json_decode($response, true);
+        if (!is_array($data) || !isset($data['response']) || !is_array($data['response'])) {
+            return $response;
+        }
+
+        $docs = $data['response']['docs'] ?? null;
+        if (!is_array($docs)) {
+            return $response;
+        }
+
+        if ($limit > 0 && count($docs) > $limit) {
+            $data['response']['docs'] = array_slice($docs, 0, $limit);
+            $docs = $data['response']['docs'];
+        }
+
+        $visibleCount = $offset + count($docs);
+        $numFound = (int)($data['response']['numFound'] ?? 0);
+        $data['response']['numFound'] = max(
+            $numFound,
+            $visibleCount,
+            (int)$lexicalCount,
+            (int)$hybridCount
+        );
+        $data['response']['start'] = $offset;
+
+        $normalized = json_encode($data);
+        return false === $normalized ? $response : $normalized;
+    }
+
+    /**
+     * Get stable lexical total for current query/filter context.
+     *
+     * @param string     $lexicalQ   Lexical query string
+     * @param array|null $fq         Filter query values
+     * @param string     $allParents Parent selector used for nested vectors
+     *
+     * @return int|null
+     */
+    protected function getLexicalCount(string $lexicalQ, ?array $fq, string $allParents): ?int
+    {
+        $countParams = new ParamBag();
+        $this->injectResponseWriter($countParams);
+        $countParams->set('q', $lexicalQ);
+        $countParams->set('rows', 0);
+        $countParams->set('start', 0);
+
+        if ($fq) {
+            $countParams->set('fq', $fq);
+        }
+        if ($this->vectorMultivalued) {
+            $fqValues = $countParams->get('fq') ?? [];
+            if (!in_array($allParents, $fqValues, true)) {
+                $countParams->add('fq', $allParents);
+            }
+        }
+
+        $countResponse = $this->connector->search($countParams);
+        $countData = json_decode($countResponse, true);
+        if (!is_array($countData) || !isset($countData['response']['numFound'])) {
+            return null;
+        }
+        return (int)$countData['response']['numFound'];
+    }
+
+    /**
+     * Get a hybrid total lower bound by probing /combined with a wider limit.
+     *
+     * @param array    $combinedQuery Combined DSL payload
+     * @param ParamBag $params        Original request params
+     * @param int      $limit         Requested limit
+     *
+     * @return int|null
+     */
+    protected function getHybridCountBound(array $combinedQuery, ParamBag $params, int $limit): ?int
+    {
+        $probeQuery = $combinedQuery;
+        $probeQuery['offset'] = 0;
+        $probeQuery['limit'] = max($limit, 100);
+        $probeQuery['fields'] = 'id';
+
+        $probeParams = new ParamBag($params->getArrayCopy());
+        $probeParams->set('hl', 'false');
+
+        $probeResponse = $this->connector->postJson('combined', json_encode($probeQuery), $probeParams);
+        $probeData = json_decode($probeResponse, true);
+        if (!is_array($probeData) || !isset($probeData['response']) || !is_array($probeData['response'])) {
+            return null;
+        }
+
+        $probeDocs = $probeData['response']['docs'] ?? null;
+        $docsCount = is_array($probeDocs) ? count($probeDocs) : 0;
+        $numFound = (int)($probeData['response']['numFound'] ?? 0);
+        return max($docsCount, $numFound);
+    }
+
+    /**
+     * Check if request contains classic facet params.
+     *
+     * @param ParamBag $params Request params
+     *
+     * @return bool
+     */
+    protected function hasFacetParams(ParamBag $params): bool
+    {
+        foreach (array_keys($params->getArrayCopy()) as $paramName) {
+            if ($paramName === 'facet' || str_starts_with($paramName, 'facet.')) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Hybrid fallback using /select for faceted requests.
+     *
+     * @param ParamBag $params       Request params
+     * @param string   $lexicalQ     Lexical query
+     * @param string   $vectorString Vector literal
+     * @param string   $allParents   Parent selector for nested vectors
+     * @param int      $offset       Start offset
+     * @param int      $limit        Page size
+     *
+     * @return string
+     */
+    protected function rawHybridSelectFallback(
+        ParamBag $params,
+        string $lexicalQ,
+        string $vectorString,
+        string $allParents,
+        int $offset,
+        int $limit
+    ): string {
+        $fallbackParams = new ParamBag($params->getArrayCopy());
+        $this->injectResponseWriter($fallbackParams);
+        $fallbackParams->set('rows', $limit);
+        $fallbackParams->set('start', $offset);
+
+        $vectorQ = $this->buildVectorQueryString($fallbackParams, $vectorString, $allParents);
+        $fallbackParams->set('lexical.q', $lexicalQ);
+        $fallbackParams->set('vector.q', $vectorQ);
+        $fallbackParams->set('q', '{!bool should=$lexical.q should=$vector.q minimumShouldMatch=1}');
+        $fallbackParams->set('hl', 'true');
+        $fallbackParams->set('hl.q', $lexicalQ);
+
+        $startTime = microtime(true);
+        $response = $this->connector->search($fallbackParams);
+        $this->log('debug', sprintf('HybridSearch: Solr /select fallback time: %.4f seconds', microtime(true) - $startTime));
+        return $response;
+    }
+
+    /**
+     * Build vector query string for /select hybrid fallback.
+     *
+     * @param ParamBag $params       Request params (may receive helper params)
+     * @param string   $vectorString Vector literal
+     * @param string   $allParents   Parent selector for nested vectors
+     *
+     * @return string
+     */
+    protected function buildVectorQueryString(ParamBag $params, string $vectorString, string $allParents): string
+    {
+        if ($this->vectorMultivalued) {
+            $params->set('allParents', $allParents);
+            $params->set(
+                'children.q',
+                sprintf(
+                    '{!knn f=%s topK=%d childrenOf=$allParents}%s',
+                    $this->vectorField,
+                    $this->topK,
+                    $vectorString
+                )
+            );
+            return '{!parent which=$allParents score=max v=$children.q}';
+        }
+
+        return sprintf('{!knn f=%s topK=%d}%s', $this->vectorField, $this->topK, $vectorString);
     }
 }
