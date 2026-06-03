@@ -227,6 +227,7 @@ class Backend extends SolrBackend
                         'knn' => [
                             'f'          => $this->vectorField,
                             'topK'       => $this->topK,
+                            'filteredSearchThreshold' => '60',
                             'query'      => $vectorString,
                             'childrenOf' => $allParents,
                         ],
@@ -239,6 +240,7 @@ class Backend extends SolrBackend
             'knn' => [
                 'f'     => $this->vectorField,
                 'topK'  => $this->topK,
+                'filteredSearchThreshold' => '60',
                 'query' => $vectorString,
             ],
         ];

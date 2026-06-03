@@ -142,9 +142,6 @@ class Backend extends SolrBackend
         // and also clear edismax-specific parameters that might conflict with k-NN
         if ($semanticQuery) {
             $params->set('q', $semanticQuery);
-            if ($this->queryParser !== 'vectorSimilarity') {
-                $params->add('fq', '{!frange l=' . $this->minScore . '}query($q)');
-            }
             $params->remove('qf');
             $params->remove('qt');
             $params->remove('mm');
@@ -196,7 +193,7 @@ class Backend extends SolrBackend
                 $params->set(
                     'children.q',
                     sprintf(
-                        '{!knn f=%s topK=%d childrenOf=$allParents}%s',
+                        '{!knn f=%s topK=%d filteredSearchThreshold=60 childrenOf=$allParents}%s',
                         $this->vectorField,
                         $this->topK,
                         $vectorString
@@ -218,7 +215,7 @@ class Backend extends SolrBackend
         }
 
         return sprintf(
-            '{!knn f=%s topK=%d}%s',
+            '{!knn f=%s topK=%d filteredSearchThreshold=60}%s',
             $this->vectorField,
             $this->topK,
             $vectorString
