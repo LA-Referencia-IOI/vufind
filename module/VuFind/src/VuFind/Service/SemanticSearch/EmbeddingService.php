@@ -72,6 +72,12 @@ class EmbeddingService implements LoggerAwareInterface
      * @var string
      */
     protected $encodingFormat;
+    /**
+     * Dimensions.
+     *
+     * @var int
+     */
+    protected $dimension;
 
     /**
      * Embedding API key.
@@ -109,6 +115,7 @@ class EmbeddingService implements LoggerAwareInterface
         HttpClient $httpClient,
         string $embeddingUrl,
         string $model,
+        int $dimension,
         string $encodingFormat,
         string $apiKey,
         string $siteUrl,
@@ -117,6 +124,7 @@ class EmbeddingService implements LoggerAwareInterface
         $this->httpClient = $httpClient;
         $this->embeddingUrl = $embeddingUrl;
         $this->model = $model;
+        $this->dimension = $dimension;
         $this->encodingFormat = $encodingFormat;
         $this->apiKey = $apiKey;
         $this->siteUrl = $siteUrl;
@@ -140,6 +148,7 @@ class EmbeddingService implements LoggerAwareInterface
             $payload = [
                 'input'           => $normalizedText,
                 'model'           => $this->model,
+                'dimensions'           => $this->dimension,
                 'encoding_format' => $this->encodingFormat,
             ];
             $this->httpClient->setRawBody(json_encode($payload));

@@ -51,6 +51,7 @@ namespace VuFindTest\Service\SemanticSearch {
                             'Embedding' => [
                                 'embedding_api_url' => 'http://embed/custom',
                                 'model' => 'model-z',
+                                'dimensions' => 3,
                                 'encoding_format' => 'base64',
                                 'embedding_api_key' => 'k777',
                                 'embedding_site_url' => 'https://example.org',
