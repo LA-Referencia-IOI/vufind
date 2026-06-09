@@ -139,6 +139,15 @@ class Backend extends AbstractBackend implements
             return $this->workKeysSearch($query, $offset, $limit, $params);
         }
         $json = $this->rawJsonSearch($query, $offset, $limit, $params);
+
+        $data = json_decode($json, true);
+        $debug = $data['debug'] ?? [];
+        $combinerExplanations = $debug['combinerExplanations'] ?? [];
+        $this->log(
+            'debug',
+            'combinerExplanations' . print_r($combinerExplanations, true),
+        );
+
         $collection = $this->createRecordCollection($json);
         $this->injectSourceIdentifier($collection);
 
@@ -591,8 +600,8 @@ class Backend extends AbstractBackend implements
         ) {
             throw new RemoteErrorException(
                 'Alphabetic Browse index missing.  See ' .
-                'https://vufind.org/wiki/indexing:alphabetical_heading_browse for ' .
-                'details on generating the index.',
+                    'https://vufind.org/wiki/indexing:alphabetical_heading_browse for ' .
+                    'details on generating the index.',
                 $e->getCode(),
                 $e->getResponse(),
                 $e->getPrevious()
