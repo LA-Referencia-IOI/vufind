@@ -47,14 +47,14 @@ namespace VuFindTest\Service\SemanticSearch {
             $http->expects($this->once())->method('setRawBody')
                 ->with(
                     $this->equalTo(
-                        '{"input":"hello","model":"model-x","encoding_format":"float"}'
+                        '{"input":"hello","model":"model-x","dimensions":3,"encoding_format":"float"}'
                     )
                 );
             $http->expects($this->once())->method('setHeaders')
                 ->with(['Content-Type' => 'application/json']);
             $http->expects($this->once())->method('send')->willReturn($response);
 
-            $service = new EmbeddingService($http, 'http://embed/api', 'model-x', 'float', '', '', '');
+            $service = new EmbeddingService($http, 'http://embed/api', 'model-x', 3, 'float', '', '', '');
             $this->assertEquals([0.1, 0.2, 0.3], $service->embed('hello'));
         }
 
@@ -70,7 +70,7 @@ namespace VuFindTest\Service\SemanticSearch {
             $response->method('isSuccess')->willReturn(false);
             $http->method('send')->willReturn($response);
 
-            $service = new EmbeddingService($http, 'http://embed/api', 'model-x', 'float', '', '', '');
+            $service = new EmbeddingService($http, 'http://embed/api', 'model-x', 3, 'float', '', '', '');
             $this->assertNull($service->embed('hello'));
         }
 
@@ -84,7 +84,7 @@ namespace VuFindTest\Service\SemanticSearch {
             $http = $this->createMock(HttpClient::class);
             $http->method('send')->willThrowException(new \Exception('network error'));
 
-            $service = new EmbeddingService($http, 'http://embed/api', 'model-x', 'float', '', '', '');
+            $service = new EmbeddingService($http, 'http://embed/api', 'model-x', 3, 'float', '', '', '');
             $this->assertNull($service->embed('hello'));
         }
     }

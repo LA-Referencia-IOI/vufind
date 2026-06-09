@@ -65,6 +65,7 @@ class EmbeddingServiceFactory implements FactoryInterface
 
         $embeddingUrl = $embeddingConfig->embedding_api_url ?? null;
         $model = $embeddingConfig->model ?? null;
+        $dimension = $embeddingConfig->dimension ?? 1024;
         $encodingFormat = $embeddingConfig->encoding_format ?? 'float';
         $apiKey = $embeddingConfig->embedding_api_key
             ?? getenv('EMBEDDING_API_KEY')
@@ -93,6 +94,7 @@ class EmbeddingServiceFactory implements FactoryInterface
             $httpClient,
             $embeddingUrl,
             $model,
+            $dimension,
             $encodingFormat,
             $apiKey,
             $siteUrl,
