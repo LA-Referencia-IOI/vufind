@@ -27,6 +27,16 @@ if ($cover):
                     data-view="<?= isset($this->params) ? $this->params->getOptions()->getListViewOption() : 'list' ?>">
                     <?= $this->record($this->driver)->getTitleHtml() ?>
                 </a>
+                <?php $translationId = 'title-translation-' . md5($this->driver->getSourceIdentifier() . '|' . $this->driver->getUniqueID()); ?>
+                <button type="button" class="btn btn-link btn-sm p-0 ms-1 align-baseline inline-title-translate"
+                    data-inline-title-translate
+                    data-title="<?= $this->escapeHtmlAttr($this->driver->getTitle()) ?>"
+                    data-translation-target="<?= $this->escapeHtmlAttr($translationId) ?>"
+                    aria-controls="<?= $this->escapeHtmlAttr($translationId) ?>"
+                    aria-label="Traduzir título para inglês"
+                    title="Traduzir título para inglês">
+                    <i class="fa fa-language" aria-hidden="true"></i>
+                </button>
                 <?php foreach ($this->driver->tryMethod('getTitlesAltScript', [], []) as $altTitle): ?>
                     <div class="title-alt">
                         <?= $this->escapeOrCleanHtml($altTitle, 'title') ?>
@@ -48,6 +58,7 @@ if ($cover):
                     <?php endif; ?>
                 <?php endif; ?>
             </h2>
+            <div id="<?= $this->escapeHtmlAttr($translationId) ?>" class="inline-title-translation text-muted small hidden" aria-live="polite"></div>
 
             <?php if ($score = $this->driver->getScore()): ?>
                 <div class="score">
