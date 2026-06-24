@@ -625,6 +625,7 @@ header .container.navbar {
   .combined-column {
     flex: 0 1 100%;
     margin-left: 0;
+    min-width: 0;
   }
 }
 
