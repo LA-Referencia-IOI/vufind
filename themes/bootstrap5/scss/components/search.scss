@@ -396,6 +396,8 @@ header .container.navbar {
     font-size: unset;
     line-height: $line-height-base;
     margin: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 
     .authors {
       display: block;
