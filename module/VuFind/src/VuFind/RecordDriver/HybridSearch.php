@@ -19,7 +19,8 @@ class HybridSearch extends SolrDefault
      */
     public function getBreadcrumb()
     {
-        return $this->getTitle();
+        $short = $this->getShortTitle();
+        return $short ? $short : $this->getTitle();
     }
 
     /**
