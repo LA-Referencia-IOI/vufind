@@ -392,6 +392,8 @@ header .container.navbar {
     font-size: unset;
     line-height: $line-height-base;
     margin: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 
     .authors {
       display: block;
@@ -625,6 +627,7 @@ header .container.navbar {
   .combined-column {
     flex: 0 1 100%;
     margin-left: 0;
+    min-width: 0;
   }
 }
 

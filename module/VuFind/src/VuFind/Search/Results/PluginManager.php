@@ -68,6 +68,8 @@ class PluginManager extends \VuFind\ServiceManager\AbstractPluginManager
         'solrauthorfacets' => \VuFind\Search\SolrAuthorFacets\Results::class,
         'solrcollection' => \VuFind\Search\SolrCollection\Results::class,
         'solrreserves' => \VuFind\Search\SolrReserves\Results::class,
+        'semanticsearch' => \VuFind\Search\SemanticSearch\Results::class,
+        'hybridsearch' => \VuFind\Search\HybridSearch\Results::class,
         'solrweb' => \VuFind\Search\SolrWeb\Results::class,
         'summon' => \VuFind\Search\Summon\Results::class,
         'tags' => \VuFind\Search\Tags\Results::class,
@@ -82,7 +84,7 @@ class PluginManager extends \VuFind\ServiceManager\AbstractPluginManager
      */
     protected $factories = [
         \VuFind\Search\Blender\Results::class
-            => \VuFind\Search\Solr\ResultsFactory::class,
+        => \VuFind\Search\Solr\ResultsFactory::class,
         \VuFind\Search\BrowZine\Results::class => ResultsFactory::class,
         \VuFind\Search\Combined\Results::class => ResultsFactory::class,
         \VuFind\Search\EDS\Results::class => ResultsFactory::class,
@@ -90,7 +92,7 @@ class PluginManager extends \VuFind\ServiceManager\AbstractPluginManager
         \VuFind\Search\EPF\Results::class => ResultsFactory::class,
         \VuFind\Search\EmptySet\Results::class => ResultsFactory::class,
         \VuFind\Search\Favorites\Results::class =>
-            \VuFind\Search\Favorites\ResultsFactory::class,
+        \VuFind\Search\Favorites\ResultsFactory::class,
         \VuFind\Search\LibGuides\Results::class => ResultsFactory::class,
         \VuFind\Search\LibGuidesAZ\Results::class => ResultsFactory::class,
         \VuFind\Search\MixedList\Results::class => ResultsFactory::class,
@@ -98,20 +100,22 @@ class PluginManager extends \VuFind\ServiceManager\AbstractPluginManager
         \VuFind\Search\Primo\Results::class => ResultsFactory::class,
         \VuFind\Search\ProQuestFSG\Results::class => ResultsFactory::class,
         \VuFind\Search\Search2\Results::class =>
-            \VuFind\Search\Search2\ResultsFactory::class,
+        \VuFind\Search\Search2\ResultsFactory::class,
         \VuFind\Search\Search2Collection\Results::class => ResultsFactory::class,
         \VuFind\Search\Solr\Results::class =>
-            \VuFind\Search\Solr\ResultsFactory::class,
+        \VuFind\Search\Solr\ResultsFactory::class,
         \VuFind\Search\SolrAuth\Results::class => ResultsFactory::class,
         \VuFind\Search\SolrAuthor\Results::class =>
-            \VuFind\Search\Solr\ResultsFactory::class,
+        \VuFind\Search\Solr\ResultsFactory::class,
         \VuFind\Search\SolrAuthorFacets\Results::class => ResultsFactory::class,
         \VuFind\Search\SolrCollection\Results::class => ResultsFactory::class,
         \VuFind\Search\SolrReserves\Results::class => ResultsFactory::class,
+        \VuFind\Search\SemanticSearch\Results::class => ResultsFactory::class,
+        \VuFind\Search\HybridSearch\Results::class => ResultsFactory::class,
         \VuFind\Search\SolrWeb\Results::class => ResultsFactory::class,
         \VuFind\Search\Summon\Results::class => ResultsFactory::class,
         \VuFind\Search\Tags\Results::class =>
-            \VuFind\Search\Tags\ResultsFactory::class,
+        \VuFind\Search\Tags\ResultsFactory::class,
         \VuFind\Search\WorldCat\Results::class => ResultsFactory::class,
         \VuFind\Search\WorldCat2\Results::class => ResultsFactory::class,
     ];

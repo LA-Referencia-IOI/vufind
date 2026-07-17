@@ -167,6 +167,8 @@ class Backend extends AbstractBackend implements
         $params->set('rows', $limit);
         $params->set('start', $offset);
         $params->mergeWith($this->getQueryBuilder()->build($query, $params));
+        // Ensure child documents are excluded from results by default
+        $params->add('fq', '-_nest_path_:*');
         return $this->connector->search($params);
     }
 
@@ -220,6 +222,8 @@ class Backend extends AbstractBackend implements
         }
         $params->set('fl', implode(',', $flParts));
         $params->mergeWith($this->getQueryBuilder()->build($query));
+        // Ensure child documents are excluded from results by default
+        $params->add('fq', '-_nest_path_:*');
         $response   = $this->connector->search($params);
         $collection = $this->createRecordCollection($response);
         $this->injectSourceIdentifier($collection);

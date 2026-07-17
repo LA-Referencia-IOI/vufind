@@ -32,7 +32,7 @@
        that you fully re-index after changing this setting as it can
        affect both how text is indexed and queried.
     -->
-  <luceneMatchVersion>9.11</luceneMatchVersion>
+  <luceneMatchVersion>10.1</luceneMatchVersion>
 
   <!-- Use the classic schema style by default for VuFind -->
   <schemaFactory class="ClassicIndexSchemaFactory"/>
@@ -314,6 +314,54 @@
     </httpCaching>
   </requestDispatcher>
 
+  <requestHandler name="/select" class="solr.SearchHandler">
+      <!-- default values for query parameters -->
+      <lst name="defaults">
+        <str name="echoParams">explicit</str>
+        <!--
+        <int name="rows">10</int>
+        <str name="fl">*</str>
+        <str name="version">2.1</str>
+          -->
+        <str name="spellcheck.extendedResults">true</str>
+        <str name="spellcheck.onlyMorePopular">true</str>
+        <str name="spellcheck.count">20</str>
+        <str name="q.op">AND</str>
+        <str name="df">allfields</str>
+        <!-- Enable split on whitespace to prevent switching from term centric to field
+            centric search if different field types return different analysis (such as
+            synonyms or stopwords). Note the downside that sow=true prevents
+            multi-word synonyms from working properly.
+            See the following links for more information:
+            https://opensourceconnections.com/blog/2018/02/20/edismax-and-multiterm-synonyms-oddities/
+            https://lucene.472066.n3.nabble.com/Problem-with-eDisMax-and-multi-word-synonyms-td4471917.html
+        -->
+        <str name="sow">true</str>
+      </lst>
+      <arr name="last-components">
+        <str>spellcheck</str>
+      </arr>
+  </requestHandler>
+
+  <requestHandler name="/combined" class="solr.CombinedQuerySearchHandler">
+      <!-- default values for query parameters -->
+      <lst name="defaults">
+        <str name="echoParams">explicit</str>
+        <str name="spellcheck.extendedResults">true</str>
+        <str name="spellcheck.onlyMorePopular">true</str>
+        <str name="spellcheck.count">20</str>
+        <str name="q.op">AND</str>
+        <str name="df">allfields</str>
+        <str name="sow">true</str>
+      </lst>
+      <arr name="last-components">
+        <str>spellcheck</str>
+      </arr>
+  </requestHandler>
+
+  <searchComponent class="solr.CombinedQueryComponent" name="combined_query">
+      <int name="maxCombinerQueries">2</int>
+  </searchComponent>
 
   <!-- requestHandler plugins... incoming queries will be dispatched to the
      correct handler based on the path or the qt (query type) param.
