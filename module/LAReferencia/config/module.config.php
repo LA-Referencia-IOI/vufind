@@ -2,6 +2,12 @@
 
 namespace LAReferencia\Module\Configuration;
 
+use LAReferencia\RecordDataFormatter\Specs\DefaultRecord as LAReferenciaDefaultRecordSpec;
+use LAReferencia\RecordDriver\DefaultRecord as LAReferenciaDefaultRecordDriver;
+use VuFind\RecordDataFormatter\Specs\DefaultRecord as VuFindDefaultRecord;
+use VuFind\RecordDataFormatter\Specs\DefaultRecordFactory;
+use VuFind\RecordDriver\SolrDefaultWithoutSearchServiceFactory;
+
 $config = [
     'controllers' => [
         'factories' => [
@@ -43,6 +49,27 @@ $config = [
                         'controller' => 'BulkExport',
                         'action' => 'Download',
                     ],
+                ],
+            ],
+        ],
+    ],
+    'vufind' => [
+        'plugin_managers' => [
+            'recorddataformatter_specs' => [
+                'aliases' => [
+                    VuFindDefaultRecord::class => LAReferenciaDefaultRecordSpec::class,
+                ],
+                'factories' => [
+                    LAReferenciaDefaultRecordSpec::class => DefaultRecordFactory::class,
+                ],
+            ],
+            'recorddriver' => [
+                'aliases' => [
+                    'solrdefault' => LAReferenciaDefaultRecordDriver::class,
+                ],
+                'factories' => [
+                    LAReferenciaDefaultRecordDriver::class =>
+                        SolrDefaultWithoutSearchServiceFactory::class,
                 ],
             ],
         ],
