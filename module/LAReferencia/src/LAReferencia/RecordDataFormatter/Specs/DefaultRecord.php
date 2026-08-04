@@ -98,6 +98,7 @@ class DefaultRecord extends VuFindDefaultRecord
         $spec['Access Level'] = [
             'dataMethod' => 'getAccessLevel',
             'renderType' => null,
+            'translate' => true,
             'pos' => 1100,
         ];
         $spec['Keyword'] = [
