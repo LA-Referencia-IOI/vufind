@@ -2,9 +2,9 @@
 
 namespace LAReferencia\RecordDriver;
 
-use VuFind\RecordDriver\DefaultRecord as VuFindDefaultRecord;
+use VuFind\RecordDriver\SolrDefault as VuFindSolrDefault;
 
-class DefaultRecord extends VuFindDefaultRecord
+class LAReferenciaSolrDefault extends VuFindSolrDefault
 {
     /**
      * Get all authors.
@@ -98,19 +98,6 @@ class DefaultRecord extends VuFindDefaultRecord
         $this->replaceKey($allAuthors2, 'secondary', 'primary');
 
         return array_merge_recursive($allAuthors, $allAuthors2);
-    }
-
-    /**
-     * Accept Solr highlight details passed by the Solr record loader.
-     *
-     * @param array $details Details to add
-     *
-     * @return void
-     *
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
-     */
-    public function setHighlightDetails($details): void
-    {
     }
 
     /**

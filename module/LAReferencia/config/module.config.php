@@ -3,10 +3,14 @@
 namespace LAReferencia\Module\Configuration;
 
 use LAReferencia\RecordDataFormatter\Specs\DefaultRecord as LAReferenciaDefaultRecordSpec;
-use LAReferencia\RecordDriver\DefaultRecord as LAReferenciaDefaultRecordDriver;
+use LAReferencia\RecordDriver\HybridSearch as LAReferenciaHybridSearchDriver;
+use LAReferencia\RecordDriver\LAReferenciaSolrDefault;
+use LAReferencia\RecordDriver\SemanticSearch as LAReferenciaSemanticSearchDriver;
 use VuFind\RecordDataFormatter\Specs\DefaultRecord as VuFindDefaultRecord;
 use VuFind\RecordDataFormatter\Specs\DefaultRecordFactory;
-use VuFind\RecordDriver\SolrDefaultWithoutSearchServiceFactory;
+use VuFind\RecordDriver\HybridSearchFactory;
+use VuFind\RecordDriver\SemanticSearchFactory;
+use VuFind\RecordDriver\SolrDefaultFactory;
 
 $config = [
     'controllers' => [
@@ -65,11 +69,17 @@ $config = [
             ],
             'recorddriver' => [
                 'aliases' => [
-                    'solrdefault' => LAReferenciaDefaultRecordDriver::class,
+                    'solrdefault' => LAReferenciaSolrDefault::class,
+                    'semanticsearch' => LAReferenciaSemanticSearchDriver::class,
+                    'hybridsearch' => LAReferenciaHybridSearchDriver::class,
                 ],
                 'factories' => [
-                    LAReferenciaDefaultRecordDriver::class =>
-                        SolrDefaultWithoutSearchServiceFactory::class,
+                    LAReferenciaSolrDefault::class =>
+                        SolrDefaultFactory::class,
+                    LAReferenciaSemanticSearchDriver::class =>
+                        SemanticSearchFactory::class,
+                    LAReferenciaHybridSearchDriver::class =>
+                        HybridSearchFactory::class,
                 ],
             ],
         ],
