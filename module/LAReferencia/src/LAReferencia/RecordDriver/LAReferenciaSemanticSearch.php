@@ -2,7 +2,7 @@
 
 namespace LAReferencia\RecordDriver;
 
-class HybridSearch extends LAReferenciaSolrDefault
+class LAReferenciaSemanticSearch extends LAReferenciaSolrDefault
 {
     /**
      * Get text that can be displayed to represent this record in breadcrumbs.
