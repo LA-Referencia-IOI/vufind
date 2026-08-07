@@ -2,10 +2,12 @@
 
 namespace LAReferencia\Module\Configuration;
 
+use LAReferencia\MetadataVocabulary\LAReferenciaEprints;
 use LAReferencia\RecordDataFormatter\Specs\DefaultRecord as LAReferenciaDefaultRecordSpec;
 use LAReferencia\RecordDriver\LAReferenciaHybridSearch;
 use LAReferencia\RecordDriver\LAReferenciaSemanticSearch;
 use LAReferencia\RecordDriver\LAReferenciaSolrDefault;
+use Laminas\ServiceManager\Factory\InvokableFactory;
 use VuFind\RecordDataFormatter\Specs\DefaultRecord as VuFindDefaultRecord;
 use VuFind\RecordDataFormatter\Specs\DefaultRecordFactory;
 use VuFind\RecordDriver\HybridSearchFactory;
@@ -65,6 +67,15 @@ $config = [
                 ],
                 'factories' => [
                     LAReferenciaDefaultRecordSpec::class => DefaultRecordFactory::class,
+                ],
+            ],
+            'metadatavocabulary' => [
+                'aliases' => [
+                    'lareferenciaeprints' => LAReferenciaEprints::class,
+                ],
+                'factories' => [
+                    LAReferenciaEprints::class =>
+                        InvokableFactory::class,
                 ],
             ],
             'recorddriver' => [
