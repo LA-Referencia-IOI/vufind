@@ -1,0 +1,35 @@
+services:
+  solr-nightly:
+    image: apache/solr-nightly:10.1.0-SNAPSHOT
+    container_name: solr-nightly
+    restart: unless-stopped
+    ports:
+      - "${SOLR_PORT:-8983}:8983"
+    environment:
+      SOLR_HEAP: "${SOLR_HEAP:-4g}"
+      SOLR_MODULES: "analysis-extras"
+      SOLR_OPTS: >-
+        -XX:+UseG1GC
+        -XX:MaxGCPauseMillis=200
+        -Xlog:gc*:stdout
+        -Dsolr.security.allow.urls.enabled=false
+    command:
+      - solr
+      - start
+      - -f
+      - --user-managed
+    volumes:
+      - solr_data:/var/solr
+      - ./vufind/solr.xml:/var/solr/data/solr.xml:ro
+      - ./vufind/biblio:/var/solr/data/biblio
+      - ./vufind/authority:/var/solr/data/authority
+      - ./vufind/reserves:/var/solr/data/reserves
+      - ./vufind/website:/var/solr/data/website
+      - ./vufind/jars:/var/solr/data/jars:ro
+      - ./vufind/jars/MarcImporter.jar:/opt/solr/server/solr-webapp/webapp/WEB-INF/lib/MarcImporter.jar:ro
+      - ./vufind/jars/browse-handler.jar:/opt/solr/server/solr-webapp/webapp/WEB-INF/lib/browse-handler.jar:ro
+      - ./vufind/jars/sqlite-jdbc-3.39.3.0.jar:/opt/solr/server/solr-webapp/webapp/WEB-INF/lib/sqlite-jdbc-3.39.3.0.jar:ro
+
+volumes:
+  solr_data:
+    name: solr_data
