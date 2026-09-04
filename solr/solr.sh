@@ -31,6 +31,11 @@ prepare_runtime_files() {
     rsync -a "$SOURCE_DIR/jars/" "$RUNTIME_DIR/data/jars/"
 }
 
+remove_stale_locks() {
+    [ -d "$RUNTIME_DIR/data" ] || return 0
+    find "$RUNTIME_DIR/data" -type f -name write.lock -delete
+}
+
 [ "$#" -eq 1 ] || usage
 
 case "$1" in
@@ -39,6 +44,8 @@ case "$1" in
         exec docker compose -f "$COMPOSE_FILE" up -d
         ;;
     restart)
+        docker compose -f "$COMPOSE_FILE" stop
+        remove_stale_locks
         prepare_runtime_files
         exec docker compose -f "$COMPOSE_FILE" up -d --force-recreate
         ;;
