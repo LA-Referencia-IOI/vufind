@@ -17,10 +17,13 @@ usage() {
 
 prepare_runtime_files() {
     mkdir -p "$RUNTIME_DIR/data"
+    # The Solr image runs as UID/GID 8983, not as the host user.
+    chmod a+rwx "$RUNTIME_DIR" "$RUNTIME_DIR/data"
     install -m 0644 "$SOURCE_DIR/solr.xml" "$RUNTIME_DIR/data/solr.xml"
 
     for core in $CORE_NAMES; do
         mkdir -p "$RUNTIME_DIR/data/$core"
+        chmod a+rwx "$RUNTIME_DIR/data/$core"
         rsync -a --exclude='data/' "$SOURCE_DIR/$core/" "$RUNTIME_DIR/data/$core/"
     done
 
