@@ -1,53 +1,78 @@
-#solr
+# Solr 10.1 nightly com VuFind via Docker Compose
 
-### 1. Install Solr 9.11 beta or Solr 10.1 beta
-```
-sudo docker pull apache/solr-nightly:9.11.0-SNAPSHOT
-sudo docker pull apache/solr-nightly:10.1.0-SNAPSHOT
-```
-### 2. Run Solr in detached
-```shell
+Este Compose sobe o Solr 10.1 beta/nightly com os cores e JARs do VuFind
+montados como volumes. Assim nao e necessario usar `docker cp` nem entrar no
+container para copiar arquivos.
 
-#9.11
-sudo docker run -d --name solr-nightly -p 8983:8983 -v solr_data:/var/solr -e SOLR_OPTS='-Dsolr.disable.allowUrls=true' apache/solr-nightly:9.11.0-SNAPSHOT
+## Subir o Solr
 
-#10.1
-sudo docker run -d --name solr-nightly -p 8983:8983 -v solr_data:/var/solr -e SOLR_OPTS="-Dsolr.security.allow.urls.enabled=false" apache/solr-nightly:10.1.0-SNAPSHOT solr start -f --user-managed
-
-```
-### 3. Copy the core into the Solr container
-```shell
-sudo docker cp /usr/local/vufind/solr/vufind/biblio solr-nightly:/var/solr/data/
-```
-### 4. Copy the Vufind libs to Solr
+Execute a partir da raiz do VuFind:
 
 ```shell
-sudo docker cp /usr/local/vufind/solr/vendor/modules/analysis-extras/lib/icu4j-74.2.jar solr-nightly:/opt/solr/server/solr-webapp/webapp/WEB-INF/lib/ 
-
-sudo docker cp  /usr/local/vufind/solr/vendor/modules/analysis-extras/lib/lucene-analysis-icu-9.11.1.jar solr-nightly:/opt/solr/server/solr-webapp/webapp/WEB-INF/lib/
-
-sudo docker cp  /usr/local/vufind/solr/vufind/jars/. solr-nightly:/opt/solr/server/solr-webapp/webapp/WEB-INF/lib/
+docker compose -f solr/docker-compose.solr-nightly.yml up -d
 ```
 
-### 5. Fix permissions inside the container
+O servico usa:
 
-Enter the container shell:
-```shell
-sudo docker exec -u 0 -it solr-nightly bash
+- imagem `apache/solr-nightly:10.1.0-SNAPSHOT`
+- container `solr-nightly`
+- porta `8983`
+- volume Docker `solr_data` em `/var/solr`
+- heap `4g`
+- modulo `analysis-extras`
+- `SOLR_OPTS` com G1GC, log de GC e `-Dsolr.security.allow.urls.enabled=false`
+
+## Volumes montados
+
+Os cores do VuFind sao montados diretamente dentro de `/var/solr/data`:
+
+```yaml
+./vufind/biblio:/var/solr/data/biblio
+./vufind/authority:/var/solr/data/authority
+./vufind/reserves:/var/solr/data/reserves
+./vufind/website:/var/solr/data/website
+./vufind/solr.xml:/var/solr/data/solr.xml:ro
 ```
-Then run:
-```shell
-chown -R solr:solr /var/solr/data/biblio
-chown solr:solr /opt/solr/server/solr-webapp/webapp/WEB-INF/lib/*.jar
-exit
+
+Os JARs do VuFind tambem sao montados:
+
+```yaml
+./vufind/jars:/var/solr/data/jars:ro
+./vufind/jars/MarcImporter.jar:/opt/solr/server/solr-webapp/webapp/WEB-INF/lib/MarcImporter.jar:ro
+./vufind/jars/browse-handler.jar:/opt/solr/server/solr-webapp/webapp/WEB-INF/lib/browse-handler.jar:ro
+./vufind/jars/sqlite-jdbc-3.39.3.0.jar:/opt/solr/server/solr-webapp/webapp/WEB-INF/lib/sqlite-jdbc-3.39.3.0.jar:ro
 ```
-### 6. Restart Solr (to detect the core)
-```shell
-sudo docker stop solr-nightly  
-sudo docker start solr-nightly
-```
+
+Os JARs sao montados arquivo por arquivo dentro de `WEB-INF/lib` para nao
+sobrepor as bibliotecas nativas do Solr.
+
 ## Logs
+
 ```shell
-sudo docker logs -f solr-nightly
+docker logs -f solr-nightly
 ```
 
+## Parar e remover
+
+```shell
+docker compose -f solr/docker-compose.solr-nightly.yml down
+```
+
+Para apagar tambem o volume Docker persistente `solr_data`:
+
+```shell
+docker compose -f solr/docker-compose.solr-nightly.yml down -v
+```
+
+## Permissoes
+
+Como os cores estao em bind mount, o Solr grava os dados de indice nos
+diretorios locais dos cores. Esses caminhos ja estao ignorados pelo Git em
+`solr/.gitignore`.
+
+No Linux, se o Solr subir mas nao conseguir escrever nos cores, ajuste a posse
+dos diretorios para o usuario do container:
+
+```shell
+sudo chown -R 8983:8983 solr/vufind/biblio solr/vufind/authority solr/vufind/reserves solr/vufind/website
+```
