@@ -13,6 +13,7 @@ services:
         -XX:MaxGCPauseMillis=200
         -Xlog:gc*:stdout
         -Dsolr.security.allow.urls.enabled=false
+        --add-modules=jdk.incubator.vector
     command:
       - solr
       - start
