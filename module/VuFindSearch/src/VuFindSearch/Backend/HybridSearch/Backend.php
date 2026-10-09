@@ -9,14 +9,12 @@ use VuFind\Service\SemanticSearch\EmbeddingService;
 use VuFindSearch\Query\AbstractQuery;
 use VuFindSearch\Query\Query;
 
-use function count;
+use function explode;
+use function implode;
 use function in_array;
-use function is_array;
-use function json_decode;
 use function json_encode;
-use function max;
+use function microtime;
 use function sprintf;
-use function str_starts_with;
 
 /**
  * SOLR Hybrid search backend with RRF.
@@ -69,22 +67,16 @@ class Backend extends SolrBackend
      */
     protected $vectorMultivalued;
 
-
     /**
      * Constructor.
      *
-     * @param \VuFindSearch\Backend\Solr\Connector $connector  SOLR connector
-     * @param \Laminas\Http\Client                 $httpClient HTTP client
-     * @param string                               $embedUrl   Embedding API URL
-     * @param string                               $vectorFld  Vector field name
-     * @param int                                  $topK       Standard top K
-     * @param float                                $minScore   Minimum score
-     * @param int                                  $rrfK       RRF K parameter
-     * @param int                                  $topK       Top K for hybrid
+     * @param \VuFindSearch\Backend\Solr\Connector $connector        SOLR connector
+     * @param EmbeddingService                     $embeddingService Embedding Service
+     * @param string                               $vectorFld        Vector field name
+     * @param float                                $minScore         Minimum score
+     * @param int                                  $rrfK             RRF K parameter
+     * @param int                                  $topK             Top K for hybrid
      * @param bool                                 $vectorMultivalued Whether vector field is multivalued
-     * @param string                               $model      Embedding model
-     * @param string                               $encoding   Encoding format
-     * @param string                               $user       User identifier
      */
     public function __construct(
         $connector,
@@ -93,7 +85,7 @@ class Backend extends SolrBackend
         $minScore,
         $rrfK,
         $topK,
-        $vectorMultivalued,
+        $vectorMultivalued = true
     ) {
         parent::__construct($connector);
         $this->embeddingService = $embeddingService;
@@ -101,7 +93,7 @@ class Backend extends SolrBackend
         $this->minScore = $minScore;
         $this->rrfK = $rrfK;
         $this->topK = $topK;
-        $this->vectorMultivalued = (bool)$vectorMultivalued;
+        $this->vectorMultivalued = (bool) $vectorMultivalued;
     }
 
     /**
@@ -121,6 +113,12 @@ class Backend extends SolrBackend
         ?ParamBag $params = null
     ) {
         $params = $params ?: new ParamBag();
+
+        // 1. OTIMIZAÇÃO: Curto-circuito para requisições de contagem/spellcheck (rows=0)
+        if ($limit === 0) {
+            return parent::rawJsonSearch($query, $offset, $limit, $params);
+        }
+
         $this->injectResponseWriter($params);
 
         $lookFor = '';
@@ -132,6 +130,7 @@ class Backend extends SolrBackend
             return parent::rawJsonSearch($query, $offset, $limit, $params);
         }
 
+        // 2. Gerar Embedding apenas para a consulta válida de resultados
         $embeddingArray = $this->embeddingService->embed($lookFor);
 
         if (!$embeddingArray) {
@@ -142,28 +141,27 @@ class Backend extends SolrBackend
         $lexicalParams = $this->getQueryBuilder()->build($query, $params);
         $lexicalQ = $lexicalParams->get('q')[0] ?? '*:*';
 
-        // Merge lexical parameters into main params (except q, rows, start which are in JSON)
+        // Merge lexical parameters into main params
         $params->mergeWith($lexicalParams);
         $params->remove('q');
         $params->remove('rows');
         $params->remove('start');
 
-        // Ensure 'score' is in the field list (fl)
+        // 3. OTIMIZAÇÃO DE CAMPOS (fl): Evita o uso de 'fl=*' se possível
         $fl = $params->get('fl');
         if ($fl) {
-            $flArray = explode(',', implode(',', (array)$fl));
-            if (!in_array('score', $flArray)) {
+            $flArray = explode(',', implode(',', (array) $fl));
+            if (!in_array('score', $flArray, true)) {
                 $params->add('fl', 'score');
             }
         } else {
             $params->set('fl', '*,score');
         }
-        $finalFl = implode(',', (array)$params->get('fl'));
+        $finalFl = implode(',', (array) $params->get('fl'));
 
         // Construct Combined Query DSL
         $allParents = '*:* -_nest_path_:*';
         $vectorString = '[' . implode(',', $embeddingArray) . ']';
-
 
         $vectorQuery = $this->buildVectorQueryNode($vectorString, $allParents);
         $combinedQuery = [
@@ -175,25 +173,23 @@ class Backend extends SolrBackend
                 ],
                 'vector' => $vectorQuery,
             ],
-            'limit'  => $limit,
+            'limit' => $limit,
             'offset' => $offset,
             'fields' => $finalFl,
             'params' => [
-                'combiner'           => true,
-                'combiner.query'     => ['lexical', 'vector'],
+                'combiner' => true,
+                'combiner.query' => ['lexical', 'vector'],
                 'combiner.algorithm' => 'rrf',
-                'combiner.rrf.k'     => $this->rrfK,
+                'combiner.rrf.k' => $this->rrfK,
             ],
         ];
 
+        // Desativa Highlighting na busca híbrida RRF
+        $params->set('hl', 'false');
 
-        // Enable highlighting
-        $params->set('hl', 'true');
-        $params->set('hl.q', $lexicalQ);
-
-        // debug log the combined query and params
-        $params->set('debugQuery', "on");
-        $params->set('debug', "results");
+        // 4. OTIMIZAÇÃO CRÍTICA: Desativa os logs de debug do Solr que deixavam a busca lenta
+        $params->remove('debugQuery');
+        $params->remove('debug');
 
         // Add filters from original params if present
         $fq = $params->get('fq');
@@ -203,6 +199,7 @@ class Backend extends SolrBackend
 
         $startTime = microtime(true);
         $response = $this->connector->postJson('combined', json_encode($combinedQuery), $params);
+
         $this->log('debug', sprintf('HybridSearch: Solr combined search time: %.4f seconds', microtime(true) - $startTime));
 
         return $response;
@@ -225,10 +222,9 @@ class Backend extends SolrBackend
                     'score' => 'max',
                     'query' => [
                         'knn' => [
-                            'f'          => $this->vectorField,
-                            'topK'       => $this->topK,
-                            'filteredSearchThreshold' => '60',
-                            'query'      => $vectorString,
+                            'f' => $this->vectorField,
+                            'topK' => $this->topK,
+                            'query' => $vectorString,
                             'childrenOf' => $allParents,
                         ],
                     ],
@@ -238,9 +234,8 @@ class Backend extends SolrBackend
 
         return [
             'knn' => [
-                'f'     => $this->vectorField,
-                'topK'  => $this->topK,
-                'filteredSearchThreshold' => '60',
+                'f' => $this->vectorField,
+                'topK' => $this->topK,
                 'query' => $vectorString,
             ],
         ];
