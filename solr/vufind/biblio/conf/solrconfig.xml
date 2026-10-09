@@ -372,6 +372,26 @@
     </arr>
   </requestHandler>
 
+  <requestHandler name="/combined" class="solr.CombinedQuerySearchHandler">
+      <!-- default values for query parameters -->
+      <lst name="defaults">
+        <str name="echoParams">explicit</str>
+        <str name="spellcheck.extendedResults">true</str>
+        <str name="spellcheck.onlyMorePopular">true</str>
+        <str name="spellcheck.count">20</str>
+        <str name="q.op">AND</str>
+        <str name="df">allfields</str>
+        <str name="sow">true</str>
+      </lst>
+      <arr name="last-components">
+        <str>spellcheck</str>
+      </arr>
+  </requestHandler>
+
+  <searchComponent class="solr.CombinedQueryComponent" name="combined_query">
+      <int name="maxCombinerQueries">2</int>
+  </searchComponent>
+
   <!-- the following two handlers will be used for eligible dismax searches defined
      in searchspecs.yaml. The edismax handler will be used most of the time, unless
      a specific configuration tells VuFind to use traditional dismax instead. You
