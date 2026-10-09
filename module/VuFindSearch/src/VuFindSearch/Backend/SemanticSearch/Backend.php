@@ -89,7 +89,7 @@ class Backend extends SolrBackend
         $this->minScore = $minScore;
         $this->topK = $topK;
         $this->queryParser = $queryParser;
-        $this->vectorMultivalued = (bool)$vectorMultivalued;
+        $this->vectorMultivalued = (bool) $vectorMultivalued;
     }
 
     /**
@@ -109,8 +109,13 @@ class Backend extends SolrBackend
         ?ParamBag $params = null
     ) {
         $params = $params ?: new ParamBag();
-        $this->injectResponseWriter($params);
 
+        // 1. Evitar busca semântica para chamadas secundárias com rows=0 (ex: spellcheck)
+        if ($limit === 0) {
+            return parent::rawJsonSearch($query, $offset, $limit, $params);
+        }
+
+        $this->injectResponseWriter($params);
         $params->set('rows', $limit);
         $params->set('start', $offset);
 
@@ -123,33 +128,28 @@ class Backend extends SolrBackend
             return parent::rawJsonSearch($query, $offset, $limit, $params);
         }
 
-
         $embeddingArray = $this->embeddingService->embed($lookFor);
 
         if (!$embeddingArray) {
             throw new BackendException('Problem connecting to Embedding API.');
         }
 
-
         $vectorString = '[' . implode(',', $embeddingArray) . ']';
-
         $semanticQuery = $this->buildSemanticQuery($params, $vectorString);
 
-        // Build standard parameters
+        // Constrói parâmetros padrão do VuFind
         $params->mergeWith($this->getQueryBuilder()->build($query, $params));
 
-        // If we have a semantic query, overwrite the 'q' parameter to avoid QueryBuilder escaping
-        // and also clear edismax-specific parameters that might conflict with k-NN
         if ($semanticQuery) {
             $params->set('q', $semanticQuery);
             $params->remove('qf');
             $params->remove('qt');
             $params->remove('mm');
 
-            // Ensure 'score' is in the field list (fl)
-            $fl = $params->get('fl');
-            if ($fl) {
-                if (!str_contains(implode(',', (array)$fl), 'score')) {
+            // Garante que o score seja retornado sem forçar fl=*
+            $fl = (array) $params->get('fl');
+            if (!empty($fl)) {
+                if (!str_contains(implode(',', $fl), 'score')) {
                     $params->add('fl', 'score');
                 }
             } else {
@@ -157,12 +157,12 @@ class Backend extends SolrBackend
             }
         }
 
-        // Enable highlighting
-        $params->set('hl', 'true');
-        $params->set('hl.q', $lookFor);
+        // Highlighting opcional: desative se não for estritamente necessário na busca por vetores
+        $params->set('hl', 'false');
 
         $startTime = microtime(true);
         $response = $this->connector->search($params);
+
         $this->log('debug', sprintf('SemanticSearch: Solr search time: %.4f seconds', microtime(true) - $startTime));
 
         return $response;
@@ -175,7 +175,7 @@ class Backend extends SolrBackend
      * @param string   $vectorString Vector literal for Solr parsers
      *
      * @return string
-     */
+     */    
     protected function buildSemanticQuery(ParamBag $params, string $vectorString): string
     {
         if ($this->vectorMultivalued) {
@@ -190,10 +190,11 @@ class Backend extends SolrBackend
                     )
                 );
             } else {
+                // Removido filteredSearchThreshold=60 para deixar o Lucene decidir a melhor estratégia
                 $params->set(
                     'children.q',
                     sprintf(
-                        '{!knn f=%s topK=%d filteredSearchThreshold=60 childrenOf=$allParents}%s',
+                        '{!knn f=%s topK=%d childrenOf=$allParents}%s',
                         $this->vectorField,
                         $this->topK,
                         $vectorString
@@ -215,7 +216,7 @@ class Backend extends SolrBackend
         }
 
         return sprintf(
-            '{!knn f=%s topK=%d filteredSearchThreshold=60}%s',
+            '{!knn f=%s topK=%d}%s',
             $this->vectorField,
             $this->topK,
             $vectorString
