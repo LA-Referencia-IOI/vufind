@@ -14,10 +14,10 @@ Os dados abaixo correspondem ao core `biblio`. Não foram fornecidos tamanhos ou
 
 | Informação | Valor observado |
 | --- | --- |
-| Container | `lareferencia-solr` |
-| Imagem | `apache/solr-nightly:10.1.0-SNAPSHOT` |
-| Solr | `10.1.0-SNAPSHOT` |
-| Lucene | `10.4.0` |
+| Container | `solr-9-11` |
+| Imagem | `solr:9.11.0` |
+| Solr | `9.11.0` |
+| Lucene | incluído no Solr `9.11.0` |
 | Core | `biblio` |
 | Tamanho reportado do índice | **88,03 GB** |
 | Documentos ativos (`Num Docs`) | **19.693.481** |

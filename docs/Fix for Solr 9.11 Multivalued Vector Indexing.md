@@ -1,20 +1,20 @@
-# Walkthroug - Changes for Solr 10.1 Multivalued Vector Indexing
+# Walkthrough - Changes for Solr 9.11 Multivalued Vector Indexing
 
-I have implemented the necessary changes to enable indexing and searching of multivalued vectors in your Solr 10.1 instance, while maintaining compatibility with standard bibliographic searches.
+This document describes the changes required to enable indexing and searching of multivalued vectors in Solr 9.11 while maintaining compatibility with standard bibliographic searches.
 
 ## Changes Made
 
 ### 1. Updated Schema for Nested Document Support
-Solr 10.1 implements multivalued vectors by transparently creating nested documents. This requires specific internal fields.
-- Added `_root_` and `_nest_path_` fields to [schema.xml](file:///home/jesielviana/solr/vufind/biblio/conf/schema.xml).
+Solr 9.11 handles multivalued vectors as nested documents. This requires specific internal fields.
+- Added `_root_` and `_nest_path_` fields to `solr/vufind/biblio/conf/schema.xml`.
 - Added the `_nest_path_` field type.
 
 ### 2. Search Backend Refactoring
 To support searching across multiple vectors and ensure clean search results, the following backends were updated:
 
--   **Semantic Search:** Modified [Backend.php](file:///home/jesielviana/Dev/ioi/vufind/module/VuFindSearch/src/VuFindSearch/Backend/SemanticSearch/Backend.php) to use the `{!parent}` query parser.
--   **Hybrid Search:** Updated the JSON DSL in [Backend.php](file:///home/jesielviana/Dev/ioi/vufind/module/VuFindSearch/src/VuFindSearch/Backend/HybridSearch/Backend.php) to wrap the `knn` query with a `parent` block.
--   **Solr (Default) Backend:** Injected a global filter query (`fq=-_nest_path_:*`) into [Backend.php](file:///home/jesielviana/Dev/ioi/vufind/module/VuFindSearch/src/VuFindSearch/Backend/Solr/Backend.php) to exclude internal vector fragments from search results, facets, and counts.
+-   **Semantic Search:** Modified `module/VuFindSearch/src/VuFindSearch/Backend/SemanticSearch/Backend.php` to use the `{!parent}` query parser.
+-   **Hybrid Search:** Updated the JSON DSL in `module/VuFindSearch/src/VuFindSearch/Backend/HybridSearch/Backend.php` to wrap the `knn` query with a `parent` block.
+-   **Solr (Default) Backend:** Injected a global filter query (`fq=-_nest_path_:*`) into `module/VuFindSearch/src/VuFindSearch/Backend/Solr/Backend.php` to exclude internal vector fragments from search results, facets, and counts.
 
 ### 3. Update Pipeline (Update Processor)
 > [!NOTE]
