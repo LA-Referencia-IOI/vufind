@@ -32,3 +32,9 @@ local/config/vufind.bak
 local/config/vufind/*
 !local/config/vufind/README.txt
 volumes
+.agents/
+.ai/
+/AGENTS.md
+/README-AI.md
+/.vscode/settings.json
+/.vscode/extensions.json
