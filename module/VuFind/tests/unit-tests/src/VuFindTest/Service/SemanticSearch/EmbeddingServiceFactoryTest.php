@@ -56,6 +56,7 @@ namespace VuFindTest\Service\SemanticSearch {
                                 'embedding_api_key' => 'k777',
                                 'embedding_site_url' => 'https://example.org',
                                 'embedding_app_name' => 'my-app',
+                                'query_prefix' => 'task: search result | query: ',
                             ],
                         ]
                     )
@@ -75,6 +76,7 @@ namespace VuFindTest\Service\SemanticSearch {
             $this->assertEquals('k777', $this->getProperty($service, 'apiKey'));
             $this->assertEquals('https://example.org', $this->getProperty($service, 'siteUrl'));
             $this->assertEquals('my-app', $this->getProperty($service, 'appName'));
+            $this->assertSame('task: search result | query: ', $this->getProperty($service, 'queryPrefix'));
         }
 
         /**
@@ -115,6 +117,7 @@ namespace VuFindTest\Service\SemanticSearch {
             $this->assertEquals('', $this->getProperty($service, 'apiKey'));
             $this->assertEquals('', $this->getProperty($service, 'siteUrl'));
             $this->assertEquals('', $this->getProperty($service, 'appName'));
+            $this->assertSame('', $this->getProperty($service, 'queryPrefix'));
         }
 
         /**

@@ -98,7 +98,8 @@ class EmbeddingServiceFactory implements FactoryInterface
             $encodingFormat,
             $apiKey,
             $siteUrl,
-            $appName
+            $appName,
+            $embeddingConfig->query_prefix ?? ''
         );
     }
 }

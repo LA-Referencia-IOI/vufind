@@ -59,6 +59,35 @@ namespace VuFindTest\Service\SemanticSearch {
         }
 
         /**
+         * Preserve the prefix exactly while normalizing the search text.
+         *
+         * @return void
+         */
+        public function testEmbedWithQueryPrefix(): void
+        {
+            $http = $this->createMock(HttpClient::class);
+            $response = $this->createMock(Response::class);
+            $response->method('isSuccess')->willReturn(true);
+            $response->method('getBody')->willReturn('{"data":[{"embedding":[0.1,0.2,0.3]}]}');
+            $http->expects($this->once())->method('setRawBody')->with($this->callback(
+                fn ($body) => json_decode($body, true)['input'] === 'Task: search result | query: educação online'
+            ));
+            $http->method('send')->willReturn($response);
+            $service = new EmbeddingService(
+                $http,
+                'http://embed/api',
+                'model-x',
+                3,
+                'float',
+                '',
+                '',
+                '',
+                'Task: search result | query: '
+            );
+            $this->assertSame([0.1, 0.2, 0.3], $service->embed("  Educação  ONLINE  "));
+        }
+
+        /**
          * Test null return on unsuccessful response.
          *
          * @return void

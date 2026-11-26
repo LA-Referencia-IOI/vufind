@@ -100,6 +100,9 @@ class EmbeddingService implements LoggerAwareInterface
      */
     protected $appName;
 
+    /** @var string Literal prefix for search query embeddings. */
+    protected $queryPrefix;
+
     /**
      * Constructor.
      *
@@ -110,6 +113,7 @@ class EmbeddingService implements LoggerAwareInterface
      * @param string     $apiKey         Embedding API key
      * @param string     $siteUrl        Optional provider site URL
      * @param string     $appName        Optional provider application name
+     * @param string     $queryPrefix    Literal prefix for search queries
      */
     public function __construct(
         HttpClient $httpClient,
@@ -119,7 +123,8 @@ class EmbeddingService implements LoggerAwareInterface
         string $encodingFormat,
         string $apiKey,
         string $siteUrl,
-        string $appName
+        string $appName,
+        string $queryPrefix = ''
     ) {
         $this->httpClient = $httpClient;
         $this->embeddingUrl = $embeddingUrl;
@@ -129,6 +134,7 @@ class EmbeddingService implements LoggerAwareInterface
         $this->apiKey = $apiKey;
         $this->siteUrl = $siteUrl;
         $this->appName = $appName;
+        $this->queryPrefix = $queryPrefix;
     }
 
     /**
@@ -146,7 +152,7 @@ class EmbeddingService implements LoggerAwareInterface
             $this->httpClient->setUri($this->embeddingUrl);
             $this->httpClient->setMethod('POST');
             $payload = [
-                'input'           => $normalizedText,
+                'input'           => $this->queryPrefix . $normalizedText,
                 'model'           => $this->model,
                 'dimensions'           => $this->dimension,
                 'encoding_format' => $this->encodingFormat,
