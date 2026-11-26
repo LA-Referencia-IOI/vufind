@@ -29,6 +29,8 @@
 
 namespace VuFind;
 
+use Laminas\Http\Header\Location;
+use Laminas\Http\Response;
 use Laminas\Mvc\MvcEvent;
 use Laminas\Router\Http\RouteMatch;
 use Psr\Container\ContainerInterface;
@@ -366,6 +368,29 @@ class Bootstrapper
     }
 
     /**
+     * Set up handling for rendering redirects.
+     *
+     * @return void
+     */
+    protected function initRenderRedirects(): void
+    {
+        // When a render is triggered, check the response status code and switch to a simple redirect template for
+        // 302 redirects.
+        $callback = function ($event): void {
+            $response = $event->getResponse();
+            if ($response instanceof Response && $response->getStatusCode() === 302) {
+                $viewModel = $this->container->get('ViewManager')->getViewModel();
+                if ($viewModel->getTemplate() === 'layout/layout') {
+                    $viewModel->setTemplate('layout/redirect');
+                    $location = $response->getHeaders()->get('Location');
+                    $viewModel->setVariable('redirectUrl', $location instanceof Location ? $location->getUri() : null);
+                }
+            }
+        };
+        $this->events->attach('render', $callback, 10000);
+    }
+
+    /**
      * Set up content security policy
      *
      * @return void
@@ -437,7 +462,7 @@ class Bootstrapper
         // base64_encoding the destination URL is just further obfuscation
         $context = base64_encode(json_encode([
             'policyId' => $policyId,
-            'destination' => $event->getRequest()->getUri()->getPath(),
+            'destination' => $event->getRequest()->getRequestUri(),
         ]));
         $response->getHeaders()->addHeaderLine(
             'Location',
