@@ -34,6 +34,7 @@ use VuFind\RecordDriver\AbstractBase as RecordDriver;
 use VuFind\Search\Base\Results;
 use VuFindSearch\Command\RetrieveBatchCommand;
 
+use function array_slice;
 use function count;
 
 /**
@@ -65,21 +66,21 @@ abstract class AbstractILSChannelProvider extends AbstractChannelProvider implem
     protected $maxAge;
 
     /**
-     * ILS connection
+     * ILS connection.
      *
      * @var \VuFind\ILS\Connection
      */
     protected $ils;
 
     /**
-     * Search service
+     * Search service.
      *
      * @var \VuFindSearch\Service
      */
     protected $searchService;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param \VuFindSearch\Service  $search  Search service
      * @param \VuFind\ILS\Connection $ils     ILS connection
@@ -172,8 +173,15 @@ abstract class AbstractILSChannelProvider extends AbstractChannelProvider implem
             return [];
         }
         // Look up the record drivers for the recently returned IDs:
-        $command = new RetrieveBatchCommand('Solr', $ids);
-        $records = $this->searchService->invoke($command)->getResult()->getRecords();
+        $limit = $this->limit ?? $this->batchSize;
+        $start = ($this->page - 1) * $limit;
+        $idSlice = array_slice($ids, $start, $limit);
+        if ($idSlice) {
+            $command = new RetrieveBatchCommand('Solr', $idSlice);
+            $records = $this->searchService->invoke($command)->getResult()->getRecords();
+        } else {
+            $records = [];
+        }
         // Build the return value:
         $retVal = [
             'title' => $this->translate($this->channelTitle),

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Channels Controller
+ * Channels Controller.
  *
  * PHP version 8
  *
@@ -33,7 +33,7 @@ use Laminas\ServiceManager\ServiceLocatorInterface;
 use VuFind\ChannelProvider\ChannelLoader;
 
 /**
- * Channels Class
+ * Channels Class.
  *
  * Controls the alphabetical browsing feature
  *
@@ -46,14 +46,14 @@ use VuFind\ChannelProvider\ChannelLoader;
 class ChannelsController extends AbstractBase
 {
     /**
-     * Channel loader
+     * Channel loader.
      *
      * @var ChannelLoader
      */
     protected $loader;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param ChannelLoader           $loader Channel loader
      * @param ServiceLocatorInterface $sm     Top-level service manager (needed for
@@ -89,8 +89,11 @@ class ChannelsController extends AbstractBase
         $recordId = $this->params()->fromQuery('id');
         $source = $this->params()->fromQuery('source', DEFAULT_SEARCH_BACKEND);
         $activeChannel = $this->params()->fromQuery('channelProvider');
+        $configSections = $this->params()->fromQuery('context');
         $token = $this->params()->fromQuery('channelToken');
-        $context = $this->loader->getRecordContext($recordId, $token, $activeChannel, $source);
+        // If an active channel is set, it might come from a non-default config; check provided sections:
+        $configSections = $activeChannel && $configSections ? explode(':', $configSections) : ['record'];
+        $context = $this->loader->getRecordContext($recordId, $token, $activeChannel, $source, $configSections);
         return $this->createViewModel($context);
     }
 

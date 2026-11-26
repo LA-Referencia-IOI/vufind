@@ -62,28 +62,28 @@ class SimilarItems extends AbstractChannelProvider implements TranslatorAwareInt
     protected $maxRecordsToExamine;
 
     /**
-     * Search service
+     * Search service.
      *
      * @var \VuFindSearch\Service
      */
     protected $searchService;
 
     /**
-     * URL helper
+     * URL helper.
      *
      * @var Url
      */
     protected $url;
 
     /**
-     * Record router
+     * Record router.
      *
      * @var RecordRouter
      */
     protected $recordRouter;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param \VuFindSearch\Service $search  Search service
      * @param Url                   $url     URL helper
@@ -211,8 +211,8 @@ class SimilarItems extends AbstractChannelProvider implements TranslatorAwareInt
             return $retVal;
         }
 
-        $retVal['limit'] = $this->batchSize;
-        $params = new \VuFindSearch\ParamBag(['rows' => $this->batchSize]);
+        $retVal['limit'] = $limit = $this->limit ?? $this->batchSize;
+        $params = new \VuFindSearch\ParamBag(['rows' => $limit, 'start' => ($this->page - 1) * $limit]);
         $command = new SimilarCommand(
             $driver->getSourceIdentifier(),
             $driver->getUniqueID(),
