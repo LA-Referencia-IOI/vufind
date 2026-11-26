@@ -45,18 +45,16 @@ namespace VuFindTest\Backend\SemanticSearch {
                 ->with(
                     $this->callback(function ($params) {
                         $q = $params->get('q');
-                        $fq = $params->get('fq');
                         return $params instanceof ParamBag
                             && $params->get('rows') === [10]
                             && $params->get('start') === [5]
                             && !empty($q[0])
                             && str_contains($q[0], '{!knn f=my_vector topK=10}')
-                            && !empty($fq)
-                            && str_contains($fq[0], '{!frange l=0.7}query($q)')
                             && !empty($params->get('fl'))
                             && str_contains(implode(',', $params->get('fl')), 'score')
                             && null === $params->get('qf')
                             && null === $params->get('qt')
+                            && null === $params->get('defType')
                             && null === $params->get('mm');
                     })
                 )
@@ -69,9 +67,9 @@ namespace VuFindTest\Backend\SemanticSearch {
 
             $queryBuilder = $this->createMock(QueryBuilder::class);
             $queryBuilder->method('build')
-                ->willReturn(new ParamBag(['q' => 'title:foo', 'qf' => 'title^2', 'qt' => 'edismax', 'mm' => '1<75%']));
+                ->willReturn(new ParamBag(['q' => 'title:foo', 'qf' => 'title^2', 'qt' => 'edismax', 'defType' => 'edismax', 'mm' => '1<75%']));
 
-            $backend = new Backend($connector, $embeddingService, 'my_vector', 0.7);
+            $backend = new Backend($connector, $embeddingService, 'my_vector', 0.7, 10, 'knn', false);
             $backend->setQueryBuilder($queryBuilder);
             $backend->rawJsonSearch(new Query('hello world'), 5, 10);
         }
@@ -98,6 +96,7 @@ namespace VuFindTest\Backend\SemanticSearch {
                             && str_contains(implode(',', $params->get('fl')), 'score')
                             && null === $params->get('qf')
                             && null === $params->get('qt')
+                            && null === $params->get('defType')
                             && null === $params->get('mm');
                     })
                 )
@@ -110,11 +109,51 @@ namespace VuFindTest\Backend\SemanticSearch {
 
             $queryBuilder = $this->createMock(QueryBuilder::class);
             $queryBuilder->method('build')
-                ->willReturn(new ParamBag(['q' => 'title:foo', 'qf' => 'title^2', 'qt' => 'edismax', 'mm' => '1<75%']));
+                ->willReturn(new ParamBag(['q' => 'title:foo', 'qf' => 'title^2', 'qt' => 'edismax', 'defType' => 'edismax', 'mm' => '1<75%']));
 
-            $backend = new Backend($connector, $embeddingService, 'my_vector', 0.7, 10, 'vectorSimilarity');
+            $backend = new Backend($connector, $embeddingService, 'my_vector', 0.7, 10, 'vectorSimilarity', false);
             $backend->setQueryBuilder($queryBuilder);
             $backend->rawJsonSearch(new Query('hello world'), 5, 10);
+        }
+
+        /**
+         * Highlight query terms independently of the nested vector query.
+         *
+         * @return void
+         */
+        public function testNestedVectorSearchUsesIndependentHighlightQuery(): void
+        {
+            $connector = $this->createMock(Connector::class);
+            $connector->expects($this->once())->method('search')
+                ->with($this->callback(function (ParamBag $params) {
+                    return $params->get('q') === ['{!parent which=$allParents score=max v=$children.q}']
+                        && $params->get('hl.q') === ['{!lucene q.op=OR v=$semanticHighlightQuery}']
+                        && $params->get('semanticHighlightQuery') === ['educação online']
+                        && $params->get('defType') === null;
+                }))->willReturn('{}');
+            $embeddingService = $this->createMock(EmbeddingService::class);
+            $embeddingService->method('embed')->willReturn([0.11, 0.22]);
+            $queryBuilder = $this->createMock(QueryBuilder::class);
+            $queryBuilder->method('build')->willReturn(new ParamBag(['defType' => 'edismax']));
+            $backend = new Backend($connector, $embeddingService, 'my_vector', 0.7);
+            $backend->setQueryBuilder($queryBuilder);
+            $backend->rawJsonSearch(new Query('educação online'), 0, 10, new ParamBag(['hl' => 'true']));
+        }
+
+        public function testHighlightCanBeDisabled(): void
+        {
+            $connector = $this->createMock(Connector::class);
+            $connector->expects($this->once())->method('search')
+                ->with($this->callback(fn (ParamBag $params) => $params->get('hl') === ['false']
+                    && $params->get('semanticHighlightQuery') === null))
+                ->willReturn('{}');
+            $embeddingService = $this->createMock(EmbeddingService::class);
+            $embeddingService->method('embed')->willReturn([0.11, 0.22]);
+            $queryBuilder = $this->createMock(QueryBuilder::class);
+            $queryBuilder->method('build')->willReturn(new ParamBag());
+            $backend = new Backend($connector, $embeddingService, 'my_vector', 0.7, 10, 'knn', true, false);
+            $backend->setQueryBuilder($queryBuilder);
+            $backend->rawJsonSearch(new Query('hello world'), 0, 10, new ParamBag(['hl' => 'true']));
         }
 
         /**

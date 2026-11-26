@@ -67,6 +67,9 @@ class Backend extends SolrBackend
      */
     protected $vectorMultivalued;
 
+    /** @var bool Whether highlighting is enabled for this backend. */
+    protected $highlightEnabled;
+
     /**
      * Constructor.
      *
@@ -77,6 +80,7 @@ class Backend extends SolrBackend
      * @param int                                  $rrfK             RRF K parameter
      * @param int                                  $topK             Top K for hybrid
      * @param bool                                 $vectorMultivalued Whether vector field is multivalued
+     * @param bool                                 $highlightEnabled Whether highlighting is enabled
      */
     public function __construct(
         $connector,
@@ -85,7 +89,8 @@ class Backend extends SolrBackend
         $minScore,
         $rrfK,
         $topK,
-        $vectorMultivalued = true
+        $vectorMultivalued = true,
+        $highlightEnabled = true
     ) {
         parent::__construct($connector);
         $this->embeddingService = $embeddingService;
@@ -94,6 +99,7 @@ class Backend extends SolrBackend
         $this->rrfK = $rrfK;
         $this->topK = $topK;
         $this->vectorMultivalued = (bool) $vectorMultivalued;
+        $this->highlightEnabled = (bool) $highlightEnabled;
     }
 
     /**
@@ -113,6 +119,9 @@ class Backend extends SolrBackend
         ?ParamBag $params = null
     ) {
         $params = $params ?: new ParamBag();
+        if (!$this->highlightEnabled) {
+            $params->set('hl', 'false');
+        }
 
         // 1. OTIMIZAÇÃO: Curto-circuito para requisições de contagem/spellcheck (rows=0)
         if ($limit === 0) {
@@ -140,10 +149,13 @@ class Backend extends SolrBackend
         // Build lexical parameters to get correct q/filters
         $lexicalParams = $this->getQueryBuilder()->build($query, $params);
         $lexicalQ = $lexicalParams->get('q')[0] ?? '*:*';
+        $lexicalParser = $lexicalParams->get('defType')[0] ?? $lexicalParams->get('qt')[0] ?? 'lucene';
 
         // Merge lexical parameters into main params
         $params->mergeWith($lexicalParams);
         $params->remove('q');
+        $params->remove('defType');
+        $params->remove('qt');
         $params->remove('rows');
         $params->remove('start');
 
@@ -167,7 +179,7 @@ class Backend extends SolrBackend
         $combinedQuery = [
             'queries' => [
                 'lexical' => [
-                    'lucene' => [
+                    $lexicalParser => [
                         'query' => $lexicalQ,
                     ],
                 ],
@@ -184,8 +196,11 @@ class Backend extends SolrBackend
             ],
         ];
 
-        // Desativa Highlighting na busca híbrida RRF
-        $params->set('hl', 'false');
+        // Preserve explicit requests to disable highlighting.
+        if (($params->get('hl')[0] ?? 'true') !== 'false') {
+            $params->set('hl', 'true');
+            $params->set('hl.q', $lexicalQ);
+        }
 
         // 4. OTIMIZAÇÃO CRÍTICA: Desativa os logs de debug do Solr que deixavam a busca lenta
         $params->remove('debugQuery');

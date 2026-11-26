@@ -101,7 +101,8 @@ class SemanticSearchBackendFactory extends AbstractSolrBackendFactory
             $minScore,
             $topK,
             $queryParser,
-            $vectorMultivalued
+            $vectorMultivalued,
+            $this->getEmbeddingBool($embeddingConfig, 'highlight_enabled', true)
         );
 
         $pageSize = $this->getIndexConfig('record_batch_size', 100);

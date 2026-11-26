@@ -57,12 +57,11 @@ namespace VuFindTest\Backend\HybridSearch {
                     $this->equalTo('combined'),
                     $this->callback(function ($json) {
                         $data = json_decode($json, true);
-                        return isset($data['queries']['lexical']['lucene']['query'])
-                            && $data['queries']['lexical']['lucene']['query'] === 'title:foo'
-                            && isset($data['queries']['vector']['knn']['query'])
-                            && str_contains($data['queries']['vector']['knn']['query'], '[0.11,0.22]')
-                            && $data['queries']['vector']['knn']['f'] === 'my_vector'
-                            && $data['queries']['vector']['knn']['topK'] === 10
+                        $vector = $data['queries']['vector']['parent']['query']['knn'] ?? [];
+                        return ($data['queries']['lexical']['edismax']['query'] ?? null) === 'hello world'
+                            && ($vector['query'] ?? null) === '[0.11,0.22]'
+                            && ($vector['f'] ?? null) === 'my_vector'
+                            && ($vector['topK'] ?? null) === 10
                             && $data['params']['combiner'] === true
                             && $data['params']['combiner.algorithm'] === 'rrf'
                             && $data['params']['combiner.rrf.k'] === 60
@@ -72,7 +71,10 @@ namespace VuFindTest\Backend\HybridSearch {
                     }),
                     $this->callback(function ($params) {
                         return $params instanceof ParamBag
-                            && $params->get('hl') === ['true'];
+                            && $params->get('hl') === ['true']
+                            && $params->get('defType') === null
+                            && $params->get('qt') === null
+                            && $params->get('qf') === ['title^2'];
                     })
                 )
                 ->willReturn('{}');
@@ -84,11 +86,27 @@ namespace VuFindTest\Backend\HybridSearch {
 
             $queryBuilder = $this->createMock(QueryBuilder::class);
             $queryBuilder->method('build')
-                ->willReturn(new ParamBag(['q' => 'title:foo', 'qf' => 'title^2']));
+                ->willReturn(new ParamBag(['q' => 'hello world', 'qf' => 'title^2', 'defType' => 'edismax']));
 
-            $backend = new Backend($connector, $embeddingService, 'my_vector', 0.7);
+            $backend = new Backend($connector, $embeddingService, 'my_vector', 0.7, 60, 10);
             $backend->setQueryBuilder($queryBuilder);
             $backend->rawJsonSearch(new Query('hello world'), 5, 10);
+        }
+
+        public function testHighlightCanBeDisabled(): void
+        {
+            $connector = $this->createMock(Connector::class);
+            $connector->expects($this->once())->method('postJson')
+                ->with('combined', $this->anything(), $this->callback(
+                    fn (ParamBag $params) => $params->get('hl') === ['false'] && $params->get('hl.q') === null
+                ))->willReturn('{}');
+            $embeddingService = $this->createMock(EmbeddingService::class);
+            $embeddingService->method('embed')->willReturn([0.11, 0.22]);
+            $queryBuilder = $this->createMock(QueryBuilder::class);
+            $queryBuilder->method('build')->willReturn(new ParamBag(['q' => 'hello world']));
+            $backend = new Backend($connector, $embeddingService, 'my_vector', 0.7, 60, 10, true, false);
+            $backend->setQueryBuilder($queryBuilder);
+            $backend->rawJsonSearch(new Query('hello world'), 0, 10, new ParamBag(['hl' => 'true']));
         }
 
         /**
@@ -109,7 +127,7 @@ namespace VuFindTest\Backend\HybridSearch {
             $queryBuilder->method('build')
                 ->willReturn(new ParamBag(['q' => 'title:foo', 'qf' => 'title^2']));
 
-            $backend = new Backend($connector, $embeddingService, 'my_vector', 0.7);
+            $backend = new Backend($connector, $embeddingService, 'my_vector', 0.7, 60, 10);
             $backend->setQueryBuilder($queryBuilder);
             $this->expectException(\VuFindSearch\Backend\Exception\BackendException::class);
             $backend->rawJsonSearch(new Query('hello world'), 5, 10);
@@ -129,7 +147,7 @@ namespace VuFindTest\Backend\HybridSearch {
             $queryBuilder = $this->createMock(QueryBuilder::class);
             $queryBuilder->method('build')->willReturn(new ParamBag(['q' => '*:*']));
 
-            $backend = new Backend($connector, $embeddingService, 'my_vector', 0.7);
+            $backend = new Backend($connector, $embeddingService, 'my_vector', 0.7, 60, 10);
             $backend->setQueryBuilder($queryBuilder);
             $this->assertEquals('{}', $backend->rawJsonSearch(new Query(''), 0, 10));
         }
