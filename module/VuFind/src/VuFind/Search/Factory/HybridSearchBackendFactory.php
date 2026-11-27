@@ -75,6 +75,7 @@ class HybridSearchBackendFactory extends AbstractSolrBackendFactory
             $topK,
             $vectorMultivalued,
             $this->getEmbeddingBool($embeddingConfig, 'highlight_enabled', true),
+            $embeddingConfig->query_parser ?? 'knn',
         );
 
         $pageSize = $this->getIndexConfig('record_batch_size', 100);

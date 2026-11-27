@@ -70,6 +70,9 @@ class Backend extends SolrBackend
     /** @var bool Whether highlighting is enabled for this backend. */
     protected $highlightEnabled;
 
+    /** @var string Vector query parser. */
+    protected $queryParser;
+
     /**
      * Constructor.
      *
@@ -81,6 +84,7 @@ class Backend extends SolrBackend
      * @param int                                  $topK             Top K for hybrid
      * @param bool                                 $vectorMultivalued Whether vector field is multivalued
      * @param bool                                 $highlightEnabled Whether highlighting is enabled
+     * @param string                               $queryParser Vector query parser
      */
     public function __construct(
         $connector,
@@ -90,7 +94,8 @@ class Backend extends SolrBackend
         $rrfK,
         $topK,
         $vectorMultivalued = true,
-        $highlightEnabled = true
+        $highlightEnabled = true,
+        $queryParser = 'knn'
     ) {
         parent::__construct($connector);
         $this->embeddingService = $embeddingService;
@@ -100,6 +105,7 @@ class Backend extends SolrBackend
         $this->topK = $topK;
         $this->vectorMultivalued = (bool) $vectorMultivalued;
         $this->highlightEnabled = (bool) $highlightEnabled;
+        $this->queryParser = $queryParser;
     }
 
     /**
@@ -230,29 +236,37 @@ class Backend extends SolrBackend
      */
     protected function buildVectorQueryNode(string $vectorString, string $allParents): array
     {
+        if ($this->queryParser === 'vectorSimilarity') {
+            $vectorQuery = [
+                'vectorSimilarity' => [
+                    'f' => $this->vectorField,
+                    'minReturn' => (float) $this->minScore,
+                    'query' => $vectorString,
+                ],
+            ];
+        } else {
+            $vectorQuery = [
+                'knn' => [
+                    'f' => $this->vectorField,
+                    'topK' => $this->topK,
+                    'query' => $vectorString,
+                ],
+            ];
+            if ($this->vectorMultivalued) {
+                $vectorQuery['knn']['childrenOf'] = $allParents;
+            }
+        }
+
         if ($this->vectorMultivalued) {
             return [
                 'parent' => [
                     'which' => $allParents,
                     'score' => 'max',
-                    'query' => [
-                        'knn' => [
-                            'f' => $this->vectorField,
-                            'topK' => $this->topK,
-                            'query' => $vectorString,
-                            'childrenOf' => $allParents,
-                        ],
-                    ],
+                    'query' => $vectorQuery,
                 ],
             ];
         }
 
-        return [
-            'knn' => [
-                'f' => $this->vectorField,
-                'topK' => $this->topK,
-                'query' => $vectorString,
-            ],
-        ];
+        return $vectorQuery;
     }
 }

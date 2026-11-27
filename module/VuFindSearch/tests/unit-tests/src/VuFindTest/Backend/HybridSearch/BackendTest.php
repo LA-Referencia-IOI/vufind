@@ -110,6 +110,43 @@ namespace VuFindTest\Backend\HybridSearch {
         }
 
         /**
+         * Test the similarity threshold for both flat and nested vectors.
+         *
+         * @return void
+         */
+        public function testVectorSimilarityQuery(): void
+        {
+            foreach ([false, true] as $nested) {
+                $connector = $this->createMock(Connector::class);
+                $connector->expects($this->once())->method('postJson')
+                    ->with('combined', $this->callback(function ($json) use ($nested) {
+                        $data = json_decode($json, true);
+                        $vector = $data['queries']['vector'];
+                        if ($nested) {
+                            if (($vector['parent']['score'] ?? null) !== 'max') {
+                                return false;
+                            }
+                            $vector = $vector['parent']['query'];
+                        }
+                        return $vector === ['vectorSimilarity' => [
+                            'f' => 'my_vector', 'minReturn' => 0.85, 'query' => '[0.11,0.22]',
+                        ]]
+                            && $data['params']['combiner.algorithm'] === 'rrf'
+                            && ($data['queries']['lexical']['lucene']['query'] ?? null) === 'hello world';
+                    }), $this->anything())->willReturn('{}');
+                $embeddingService = $this->createMock(EmbeddingService::class);
+                $embeddingService->method('embed')->willReturn([0.11, 0.22]);
+                $queryBuilder = $this->createMock(QueryBuilder::class);
+                $queryBuilder->method('build')->willReturn(new ParamBag(['q' => 'hello world']));
+                $backend = new Backend(
+                    $connector, $embeddingService, 'my_vector', '0.85', 60, 10, $nested, true, 'vectorSimilarity'
+                );
+                $backend->setQueryBuilder($queryBuilder);
+                $backend->rawJsonSearch(new Query('hello world'), 0, 10);
+            }
+        }
+
+        /**
          * Test error behavior when embedding is unavailable.
          *
          * @return void
