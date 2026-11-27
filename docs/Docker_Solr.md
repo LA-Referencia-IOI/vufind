@@ -1,46 +1,47 @@
-# Solr 10.1 nightly com VuFind via Docker Compose
+# Solr 9.11 com VuFind via Docker Compose
 
-Este Compose sobe o Solr 10.1 beta/nightly com os cores e JARs do VuFind
-montados como volumes. Assim nao e necessario usar `docker cp` nem entrar no
-container para copiar arquivos.
+O ambiente Docker do Solr foi separado no repositório `solr-vufind`. Ele usa a
+imagem estável `solr:9.11.0` com os cores e JARs do VuFind preparados no volume
+persistente. Não é necessário usar `docker cp` nem entrar no container para
+copiar arquivos.
 
 ## Subir o Solr
 
-Execute a partir da raiz do VuFind:
+Execute a partir da raiz do repositório `solr-vufind`:
 
 ```shell
-docker compose -f solr/docker-compose.solr-nightly.yml up -d
+./solr.sh start
 ```
 
 O servico usa:
 
-- imagem `apache/solr-nightly:10.1.0-SNAPSHOT`
-- container `solr-nightly`
+- imagem `solr:9.11.0`
+- container `solr-9-11`
 - porta `8983`
-- volume Docker `solr_data` em `/var/solr`
-- heap `4g`
+- bind mount `./volume/solr` em `/var/solr`
+- heap padrão `2g`
 - modulo `analysis-extras`
 - `SOLR_OPTS` com G1GC, log de GC e `-Dsolr.security.allow.urls.enabled=false`
 
 ## Volumes montados
 
-Os cores do VuFind sao montados diretamente dentro de `/var/solr/data`:
+O script prepara os cores dentro de `/var/solr/data`:
 
 ```yaml
-./vufind/biblio:/var/solr/data/biblio
-./vufind/authority:/var/solr/data/authority
-./vufind/reserves:/var/solr/data/reserves
-./vufind/website:/var/solr/data/website
-./vufind/solr.xml:/var/solr/data/solr.xml:ro
+./vufind/biblio -> /var/solr/data/biblio
+./vufind/authority -> /var/solr/data/authority
+./vufind/reserves -> /var/solr/data/reserves
+./vufind/website -> /var/solr/data/website
+./vufind/solr.xml -> /var/solr/data/solr.xml
 ```
 
 Os JARs do VuFind tambem sao montados:
 
 ```yaml
-./vufind/jars:/var/solr/data/jars:ro
-./vufind/jars/MarcImporter.jar:/opt/solr/server/solr-webapp/webapp/WEB-INF/lib/MarcImporter.jar:ro
-./vufind/jars/browse-handler.jar:/opt/solr/server/solr-webapp/webapp/WEB-INF/lib/browse-handler.jar:ro
-./vufind/jars/sqlite-jdbc-3.39.3.0.jar:/opt/solr/server/solr-webapp/webapp/WEB-INF/lib/sqlite-jdbc-3.39.3.0.jar:ro
+./vufind/jars -> /var/solr/data/jars
+MarcImporter.jar -> /opt/solr/server/solr-webapp/webapp/WEB-INF/lib/MarcImporter.jar
+browse-handler.jar -> /opt/solr/server/solr-webapp/webapp/WEB-INF/lib/browse-handler.jar
+sqlite-jdbc-3.39.3.0.jar -> /opt/solr/server/solr-webapp/webapp/WEB-INF/lib/sqlite-jdbc-3.39.3.0.jar
 ```
 
 Os JARs sao montados arquivo por arquivo dentro de `WEB-INF/lib` para nao
@@ -49,30 +50,28 @@ sobrepor as bibliotecas nativas do Solr.
 ## Logs
 
 ```shell
-docker logs -f solr-nightly
+docker logs -f solr-9-11
 ```
 
 ## Parar e remover
 
 ```shell
-docker compose -f solr/docker-compose.solr-nightly.yml down
+./solr.sh stop
 ```
 
-Para apagar tambem o volume Docker persistente `solr_data`:
-
-```shell
-docker compose -f solr/docker-compose.solr-nightly.yml down -v
-```
+Para descartar índices incompatíveis antes de uma reindexação, pare o Solr e
+remova apenas os diretórios de índice dentro de `./volume/solr/data`. Índices
+criados com Solr/Lucene 10 não podem ser abertos pelo Solr 9.11.
 
 ## Permissoes
 
-Como os cores estao em bind mount, o Solr grava os dados de indice nos
-diretorios locais dos cores. Esses caminhos ja estao ignorados pelo Git em
-`solr/.gitignore`.
+Como os cores estão em bind mount, o Solr grava os dados de índice no diretório
+local `./volume/solr`. Esses dados não devem ser versionados.
 
-No Linux, se o Solr subir mas nao conseguir escrever nos cores, ajuste a posse
-dos diretorios para o usuario do container:
+No Linux, execute o `solr.sh` com um usuário que tenha permissão para executar
+`docker`. Se o container não conseguir gravar em `/var/solr`, confirme o mount
+efetivo:
 
 ```shell
-sudo chown -R 8983:8983 solr/vufind/biblio solr/vufind/authority solr/vufind/reserves solr/vufind/website
+docker inspect solr-9-11 --format '{{range .Mounts}}{{println .Source "->" .Destination}}{{end}}'
 ```

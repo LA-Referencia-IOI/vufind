@@ -1,7 +1,7 @@
 <?php
 
 /**
- * VuFind Logger
+ * VuFind Logger.
  *
  * PHP version 8
  *
@@ -43,7 +43,7 @@ use function is_object;
 use function is_string;
 
 /**
- * This class wraps the BaseLogger class to allow for log verbosity
+ * This class wraps the BaseLogger class to allow for log verbosity.
  *
  * @category VuFind
  * @package  Error_Logging
@@ -57,11 +57,13 @@ class Logger implements LoggerInterface, ExtendedLoggerInterface
      * Is debug logging enabled?
      *
      * @var bool
+     *
+     * @deprecated Deprecated since 11.1 and will be removed without replacement in 12.0
      */
     protected bool $debugNeeded = false;
 
     /**
-     * Monolog logger instance
+     * Monolog logger instance.
      *
      * @var MonologLogger
      */
@@ -74,7 +76,7 @@ class Logger implements LoggerInterface, ExtendedLoggerInterface
     ];
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param UserIpReader   $userIpReader  User IP reader service
      * @param ?MonologLogger $monologLogger Optional Monolog logger instance
@@ -285,6 +287,8 @@ class Logger implements LoggerInterface, ExtendedLoggerInterface
      * @param bool $newState New state (omit to leave current state unchanged)
      *
      * @return bool
+     *
+     * @deprecated Deprecated since 11.1 and will be removed without replacement in 12.0
      */
     public function debugNeeded($newState = null)
     {
@@ -394,7 +398,7 @@ class Logger implements LoggerInterface, ExtendedLoggerInterface
     }
 
     /**
-     * Convert function argument to a loggable string
+     * Convert function argument to a loggable string.
      *
      * @param mixed $arg Argument
      *

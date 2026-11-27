@@ -54,14 +54,14 @@ class ListItems extends AbstractChannelProvider
     use BatchTrait;
 
     /**
-     * IDs of lists to display
+     * IDs of lists to display.
      *
      * @var array
      */
     protected $ids;
 
     /**
-     * Tags of lists to display
+     * Tags of lists to display.
      *
      * @var array
      */
@@ -90,7 +90,7 @@ class ListItems extends AbstractChannelProvider
     protected $initialListsToDisplay;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param UserListServiceInterface             $userListService UserList database service
      * @param Url                                  $url             URL helper
@@ -274,7 +274,8 @@ class ListItems extends AbstractChannelProvider
             return $retVal;
         }
         $results = $this->resultsManager->get('Favorites');
-        $results->getParams()->initFromRequest(new Parameters(['id' => $list->getId()]));
+        $results->getParams()->initFromRequest(new Parameters(['id' => $list->getId(), 'page' => $this->page]));
+        $results->getParams()->setLimit($this->limit ?? $this->batchSize);
         $retVal['contents'] = $this->summarizeRecordDrivers($results->getResults());
         $retVal['links'][] = [
             'label' => 'channel_search',

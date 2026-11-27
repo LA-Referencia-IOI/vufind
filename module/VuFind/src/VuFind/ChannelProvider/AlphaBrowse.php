@@ -64,56 +64,56 @@ class AlphaBrowse extends AbstractChannelProvider implements TranslatorAwareInte
     protected $maxRecordsToExamine;
 
     /**
-     * Search service
+     * Search service.
      *
      * @var \VuFindSearch\Service
      */
     protected $searchService;
 
     /**
-     * URL helper
+     * URL helper.
      *
      * @var Url
      */
     protected $url;
 
     /**
-     * Record router
+     * Record router.
      *
      * @var RecordRouter
      */
     protected $recordRouter;
 
     /**
-     * Browse index to search
+     * Browse index to search.
      *
      * @var string
      */
     protected $browseIndex;
 
     /**
-     * Solr field to use for search seed
+     * Solr field to use for search seed.
      *
      * @var string
      */
     protected $solrField;
 
     /**
-     * How many rows to show before the selected value
+     * How many rows to show before the selected value.
      *
      * @var int
      */
     protected $rowsBefore;
 
     /**
-     * The search backend to query
+     * The search backend to query.
      *
      * @var string
      */
     protected $source;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param \VuFindSearch\Service $search  Search service
      * @param Url                   $url     URL helper
@@ -269,6 +269,7 @@ class AlphaBrowse extends AbstractChannelProvider implements TranslatorAwareInte
         RecordDriver $driver,
         $tokenOnly = false
     ) {
+        $limit = $this->limit ?? $this->batchSize;
         $retVal = [
             'title' => $this->translate(
                 'nearby_items',
@@ -276,7 +277,7 @@ class AlphaBrowse extends AbstractChannelProvider implements TranslatorAwareInte
             ),
             'providerId' => $this->providerId,
             'links' => [],
-            'limit' => $this->batchSize,
+            'limit' => $limit,
         ];
         $raw = $driver->getRawData();
         $from = isset($raw[$this->solrField]) ? (array)$raw[$this->solrField] : null;
@@ -292,8 +293,9 @@ class AlphaBrowse extends AbstractChannelProvider implements TranslatorAwareInte
                 $this->browseIndex,
                 // If we got this far, we can safely assume that $from[0] is set
                 $from[0],
-                0,
-                $this->batchSize,
+                // Pagination
+                $this->page - 1, // adjust for zero-based pagination
+                $limit,
                 new ParamBag(['extras' => 'title:author:isbn:id']),
                 -$this->rowsBefore
             );

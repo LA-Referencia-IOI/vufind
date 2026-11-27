@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Tag Controller
+ * Tag Controller.
  *
  * PHP version 8
  *
@@ -31,10 +31,11 @@ namespace VuFind\Controller;
 
 use Laminas\ServiceManager\ServiceLocatorInterface;
 use VuFind\Exception\Forbidden as ForbiddenException;
+use VuFind\Tags\TagsService;
 use VuFind\Validator\CsrfInterface;
 
 /**
- * Tag Controller
+ * Tag Controller.
  *
  * @category VuFind
  * @package  Controller
@@ -47,7 +48,7 @@ class TagController extends AbstractSearch
     use Feature\UserContentTrait;
 
     /**
-     * Array of sort options for userListAction
+     * Array of sort options for userListAction.
      *
      * @var array
      */
@@ -58,7 +59,7 @@ class TagController extends AbstractSearch
     ];
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param ServiceLocatorInterface $sm Service locator
      */
@@ -69,7 +70,7 @@ class TagController extends AbstractSearch
     }
 
     /**
-     * Home action
+     * Home action.
      *
      * @return mixed
      */
@@ -82,7 +83,7 @@ class TagController extends AbstractSearch
     }
 
     /**
-     * Get all tags for the logged in user
+     * Get all tags for the logged in user.
      *
      * @return View
      */
@@ -105,6 +106,7 @@ class TagController extends AbstractSearch
                 $paging['sort'],
                 $paging['page'],
                 $paging['limit'],
+                $this->getService(TagsService::class)->hasCaseSensitiveTags()
             )
         );
         return $this->createViewModel(
@@ -117,7 +119,7 @@ class TagController extends AbstractSearch
     }
 
     /**
-     * Delete given tags by the logged in user
+     * Delete given tags by the logged in user.
      *
      * @return View
      */

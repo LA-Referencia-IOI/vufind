@@ -63,6 +63,9 @@ class Backend extends SolrBackend
      */
     protected $vectorMultivalued;
 
+    /** @var bool Whether highlighting is enabled for this backend. */
+    protected $highlightEnabled;
+
     /**
      * Constructor.
      *
@@ -73,6 +76,7 @@ class Backend extends SolrBackend
      * @param int              $topK             Top K results
      * @param string           $queryParser      Query parser type
      * @param bool             $vectorMultivalued Whether vector field is multivalued
+     * @param bool             $highlightEnabled Whether highlighting is enabled
      */
     public function __construct(
         Connector $connector,
@@ -81,7 +85,8 @@ class Backend extends SolrBackend
         $minScore,
         $topK = 10,
         $queryParser = 'knn',
-        $vectorMultivalued = true
+        $vectorMultivalued = true,
+        $highlightEnabled = true
     ) {
         parent::__construct($connector);
         $this->embeddingService = $embeddingService;
@@ -90,6 +95,7 @@ class Backend extends SolrBackend
         $this->topK = $topK;
         $this->queryParser = $queryParser;
         $this->vectorMultivalued = (bool) $vectorMultivalued;
+        $this->highlightEnabled = (bool) $highlightEnabled;
     }
 
     /**
@@ -109,6 +115,9 @@ class Backend extends SolrBackend
         ?ParamBag $params = null
     ) {
         $params = $params ?: new ParamBag();
+        if (!$this->highlightEnabled) {
+            $params->set('hl', 'false');
+        }
 
         // 1. Evitar busca semântica para chamadas secundárias com rows=0 (ex: spellcheck)
         if ($limit === 0) {
@@ -144,6 +153,7 @@ class Backend extends SolrBackend
             $params->set('q', $semanticQuery);
             $params->remove('qf');
             $params->remove('qt');
+            $params->remove('defType');
             $params->remove('mm');
 
             // Garante que o score seja retornado sem forçar fl=*
@@ -157,8 +167,11 @@ class Backend extends SolrBackend
             }
         }
 
-        // Highlighting opcional: desative se não for estritamente necessário na busca por vetores
-        $params->set('hl', 'false');
+        // Highlight matching words independently of the vector query and its score.
+        if (($params->get('hl')[0] ?? 'false') === 'true') {
+            $params->set('hl.q', '{!lucene q.op=OR v=$semanticHighlightQuery}');
+            $params->set('semanticHighlightQuery', $lookFor);
+        }
 
         $startTime = microtime(true);
         $response = $this->connector->search($params);

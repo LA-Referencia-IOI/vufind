@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Default Controller
+ * Default Controller.
  *
  * PHP version 8
  *
@@ -179,17 +179,17 @@ class SearchController extends AbstractSolrSearch
                     $view->subject,
                     $cc
                 );
-                $this->flashMessenger()->addMessage('email_success', 'success');
+                $this->flashMessenger()->addSuccessMessage('email_success');
                 return $this->redirect()->toUrl($view->url);
             } catch (MailException $e) {
-                $this->flashMessenger()->addMessage($e->getDisplayMessage(), 'error');
+                $this->flashMessenger()->addErrorMessage($e->getDisplayMessage());
             }
         }
         return $view;
     }
 
     /**
-     * Handle search history display && purge
+     * Handle search history display && purge.
      *
      * @return mixed
      */
@@ -229,12 +229,16 @@ class SearchController extends AbstractSolrSearch
     }
 
     /**
-     * New item search form
+     * New item search form.
      *
      * @return mixed
      */
     public function newitemAction()
     {
+        if ($this->newItems()->getMethod() === 'disabled') {
+            return $this->createHttpNotFoundModel($this->getResponse());
+        }
+
         // Search parameters set?  Process results.
         if ($this->params()->fromQuery('range') !== null) {
             return $this->forwardTo('Search', 'NewItemResults');
@@ -326,17 +330,12 @@ class SearchController extends AbstractSolrSearch
      */
     protected function setUpNewItemView(ViewModel $view, array $newItemParams): ViewModel
     {
-        // Customize the URL helper to make sure it builds proper new item URLs
-        // (check it's set first -- RSS feed will return a response model rather
-        // than a view model):
-        if (isset($view->results)) {
-            $view->results->getOptions()->setFacetListAction('search-newitemfacetlist');
-            $view->results->getUrlQuery()
-                ->setDefaultParameter('range', $newItemParams['range'])
-                ->setDefaultParameter('department', $newItemParams['dept'])
-                ->disableHiddenFilters()
-                ->setSuppressQuery(true);
-        }
+        $view->results?->getOptions()->setFacetListAction('search-newitemfacetlist');
+        $view->results?->getUrlQuery()
+            ->setDefaultParameter('range', $newItemParams['range'])
+            ->setDefaultParameter('department', $newItemParams['dept'])
+            ->disableHiddenFilters()
+            ->setSuppressQuery(true);
 
         // We don't want new items hidden filters to propagate to other searches:
         $this->serviceLocator->get('ViewHelperManager')->get('searchTabs')->disableCurrentHiddenFilterParams();
@@ -345,7 +344,7 @@ class SearchController extends AbstractSolrSearch
     }
 
     /**
-     * New item facet list
+     * New item facet list.
      *
      * @return mixed
      */
@@ -356,11 +355,11 @@ class SearchController extends AbstractSolrSearch
         // The facet list needs one extra parameter to generate appropriate links:
         $this->getRequest()->getQuery()->set('searchAction', $this->url()->fromRoute('search-newitem'));
         $view = $this->facetListAction();
-        return $this->setUpNewItemView($view, $newItemParams);
+        return $view instanceof ViewModel ? $this->setUpNewItemView($view, $newItemParams) : $view;
     }
 
     /**
-     * New item result list
+     * New item result list.
      *
      * @return mixed
      */
@@ -374,13 +373,17 @@ class SearchController extends AbstractSolrSearch
         $this->saveToHistory = false;
         $this->getSearchMemory()->disable();
 
+        // Set up RSS feed title just in case:
+        $this->getViewRenderer()->plugin('resultfeed')
+            ->setOverrideTitle('New Items');
+
         // Call rather than forward, so we can use custom template
         $view = $this->resultsAction();
-        return $this->setUpNewItemView($view, $newItemParams);
+        return $view instanceof ViewModel ? $this->setUpNewItemView($view, $newItemParams) : $view;
     }
 
     /**
-     * Course reserves
+     * Course reserves.
      *
      * @return mixed
      */
@@ -480,7 +483,7 @@ class SearchController extends AbstractSolrSearch
             ->getQueryIDLimit();
         if (count($bibIDs) > $limit) {
             $bibIDs = array_slice($bibIDs, 0, $limit);
-            $this->flashMessenger()->addMessage('too_many_reserves', 'info');
+            $this->flashMessenger()->addInfoMessage('too_many_reserves');
         }
 
         // Use standard search action with override parameter to show results:
@@ -573,7 +576,7 @@ class SearchController extends AbstractSolrSearch
 
     /**
      * Provide OpenSearch suggestions as specified at
-     * http://www.opensearch.org/Specifications/OpenSearch/Extensions/Suggestions/1.0
+     * http://www.opensearch.org/Specifications/OpenSearch/Extensions/Suggestions/1.0.
      *
      * @return \Laminas\Http\Response
      */

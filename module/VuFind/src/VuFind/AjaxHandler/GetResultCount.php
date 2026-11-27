@@ -1,7 +1,7 @@
 <?php
 
 /**
- * "Get Result Counts" AJAX Handler
+ * "Get Result Counts" AJAX Handler.
  *
  * PHP version 8
  *
@@ -37,7 +37,7 @@ use VuFind\Search\Results\PluginManager as ResultsManager;
 use VuFind\Session\Settings as SessionSettings;
 
 /**
- * "Get Result Counts" AJAX Handler
+ * "Get Result Counts" AJAX Handler.
  *
  * @category VuFind
  * @package  AJAX
@@ -49,14 +49,14 @@ use VuFind\Session\Settings as SessionSettings;
 class GetResultCount extends AbstractBase
 {
     /**
-     * ResultsManager
+     * ResultsManager.
      *
      * @var resultsManager
      */
     protected $resultsManager;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param ResultsManager  $resultsManager Results Manager
      * @param SessionSettings $ss             Session settings
@@ -77,8 +77,8 @@ class GetResultCount extends AbstractBase
     public function handleRequest(Params $params)
     {
         $this->disableSessionWrites();
-        $queryString = $params->fromQuery('querystring');
-        parse_str(parse_url($queryString, PHP_URL_QUERY), $searchParams);
+        $queryString = $params->fromQuery('querystring', '');
+        parse_str(parse_url($queryString, PHP_URL_QUERY) ?? '', $searchParams);
 
         $backend = $params->fromQuery('source', DEFAULT_SEARCH_BACKEND);
         $results = $this->resultsManager->get($backend);

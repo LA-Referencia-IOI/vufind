@@ -52,28 +52,28 @@ class Random extends AbstractChannelProvider implements TranslatorAwareInterface
     use BatchTrait;
 
     /**
-     * Mode
+     * Mode.
      *
      * @var string
      */
     protected $mode;
 
     /**
-     * Search service
+     * Search service.
      *
      * @var \VuFindSearch\Service
      */
     protected $searchService;
 
     /**
-     * Params manager
+     * Params manager.
      *
      * @var \VuFind\Search\Params\PluginManager
      */
     protected $paramManager;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param \VuFindSearch\Service               $search       Search service
      * @param \VuFind\Search\Params\PluginManager $paramManager Params manager
@@ -157,11 +157,18 @@ class Random extends AbstractChannelProvider implements TranslatorAwareInterface
             'limit' => $this->batchSize,
         ];
         $query = $params->getQuery();
+        if (!method_exists($params, 'getBackendParameters')) {
+            throw new \Exception($params::class . ' does not support getBackendParameters()!');
+        }
         $paramBag = $params->getBackendParameters();
+        if ($this->page > 1) {
+            // Random method does not support pagination:
+            return ['contents' => []];
+        }
         $command = new RandomCommand(
             $params->getSearchClassId(),
             $query,
-            $this->batchSize,
+            $this->limit ?? $this->batchSize,
             $paramBag
         );
         $random = $this->searchService->invoke($command)->getResult()->getRecords();

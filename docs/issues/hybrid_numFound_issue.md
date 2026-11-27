@@ -10,7 +10,7 @@ This causes pagination inconsistencies in applications consuming the API.
 
 ## Environment
 
-- Solr nightly `10.1.0-SNAPSHOT`
+- Solr `9.11.0`
 - `/combined` request handler
 - Hybrid search using:
   - lexical query

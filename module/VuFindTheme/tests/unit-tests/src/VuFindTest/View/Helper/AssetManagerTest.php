@@ -1,7 +1,7 @@
 <?php
 
 /**
- * AssetManager view helper Test Class
+ * AssetManager view helper Test Class.
  *
  * PHP version 8
  *
@@ -31,6 +31,7 @@ namespace VuFindTest\View\Helper;
 
 use Exception;
 use Laminas\View\Helper\InlineScript;
+use PHPUnit\Framework\MockObject\MockObject;
 use VuFindTest\Feature\ViewTrait;
 use VuFindTheme\AssetPipeline;
 use VuFindTheme\ThemeInfo;
@@ -39,7 +40,7 @@ use VuFindTheme\View\Helper\AssetManager;
 use function is_array;
 
 /**
- * AssetManager view helper Test Class
+ * AssetManager view helper Test Class.
  *
  * @category VuFind
  * @package  Tests
@@ -54,15 +55,41 @@ class AssetManagerTest extends \PHPUnit\Framework\TestCase
     /**
      * Data provider for testOutputInlineScriptLink() and testOutputInlineScriptString().
      *
-     * @return array[]
+     * @return \Iterator
      */
-    public static function outputInlineScriptProvider(): array
+    public static function outputInlineScriptProvider(): \Iterator
     {
-        return [
-            'default settings' => [[], false, 'text/javascript'],
-            'arbitrary attribute' => [['data-foo' => 'bar'], true, 'text/javascript'],
-            'arbitrary MIME type' => [['type' => 'mime/type'], false, 'mime/type'],
-        ];
+        yield 'default settings' => [[], false, 'text/javascript'];
+        yield 'arbitrary attribute' => [['data-foo' => 'bar'], true, 'text/javascript'];
+        yield 'arbitrary MIME type' => [['type' => 'mime/type'], false, 'mime/type'];
+    }
+
+    /**
+     * Mock the Laminas InlineScript helper with functional "allow arbitrary attribute" support to
+     * test behavior that could lead to subtle bugs.
+     *
+     * @return InlineScript&MockObject
+     */
+    public function getMockInlineScriptHelper(): InlineScript&MockObject
+    {
+        $inlineScriptHelper = $this->createMock(InlineScript::class);
+        $currentlyAllowed = false;
+        $inlineScriptHelper->method('arbitraryAttributesAllowed')
+            ->willReturnCallback(function () use (&$currentlyAllowed) {
+                return $currentlyAllowed;
+            });
+        $inlineScriptHelper->method('setAllowArbitraryAttributes')
+            ->willReturnCallback(function ($flag) use (&$currentlyAllowed): void {
+                $currentlyAllowed = $flag;
+            });
+        // Note that the invoke method returns the helper itself -- not a string.
+        // This matches the actual helper's behavior.
+        $inlineScriptHelper->method('__invoke')->willReturnSelf();
+        $inlineScriptHelper->method('__toString')
+            ->willReturnCallback(function () use (&$currentlyAllowed) {
+                return 'output:' . ($currentlyAllowed ? '1' : '0');
+            });
+        return $inlineScriptHelper;
     }
 
     /**
@@ -78,8 +105,7 @@ class AssetManagerTest extends \PHPUnit\Framework\TestCase
     public function testOutputInlineScriptLink(array $attrs, bool $arbitrary, string $expectedType): void
     {
         $script = 'foo.js';
-        $inlineScriptHelper = $this->createMock(InlineScript::class);
-        $inlineScriptHelper->method('arbitraryAttributesAllowed')->willReturn(false);
+        $inlineScriptHelper = $this->getMockInlineScriptHelper();
         $inlineScriptHelper
             ->expects($arbitrary ? $this->exactly(2) : $this->never())
             ->method('setAllowArbitraryAttributes');
@@ -88,11 +114,11 @@ class AssetManagerTest extends \PHPUnit\Framework\TestCase
             ->expects($this->once())
             ->method('__call')
             ->with('setFile', [$script, $expectedType, $expectedAttrs]);
-        $inlineScriptHelper->method('__invoke')->willReturn('output');
         $view = $this->getPhpRenderer(['inlineScript' => $inlineScriptHelper]);
         $assetManager = $view->plugin('assetManager');
         $options = ['allow_arbitrary_attributes' => $arbitrary];
-        $this->assertEquals('output', $assetManager->outputInlineScriptLink($script, $attrs, $options));
+        $expected = 'output:' . ($arbitrary ? '1' : '0');
+        $this->assertEquals($expected, $assetManager->outputInlineScriptLink($script, $attrs, $options));
     }
 
     /**
@@ -108,8 +134,7 @@ class AssetManagerTest extends \PHPUnit\Framework\TestCase
     public function testOutputInlineScriptString(array $attrs, bool $arbitrary, string $expectedType): void
     {
         $script = 'foo';
-        $inlineScriptHelper = $this->createMock(InlineScript::class);
-        $inlineScriptHelper->method('arbitraryAttributesAllowed')->willReturn(false);
+        $inlineScriptHelper = $this->getMockInlineScriptHelper();
         $inlineScriptHelper
             ->expects($arbitrary ? $this->exactly(2) : $this->never())
             ->method('setAllowArbitraryAttributes');
@@ -118,11 +143,11 @@ class AssetManagerTest extends \PHPUnit\Framework\TestCase
             ->expects($this->once())
             ->method('__call')
             ->with('setScript', [$script, $expectedType, $expectedAttrs]);
-        $inlineScriptHelper->method('__invoke')->willReturn('output');
         $view = $this->getPhpRenderer(['inlineScript' => $inlineScriptHelper]);
         $assetManager = $view->plugin('assetManager');
         $options = ['allow_arbitrary_attributes' => $arbitrary];
-        $this->assertEquals('output', $assetManager->outputInlineScriptString($script, $attrs, $options));
+        $expected = 'output:' . ($arbitrary ? '1' : '0');
+        $this->assertEquals($expected, $assetManager->outputInlineScriptString($script, $attrs, $options));
     }
 
     /**
@@ -134,38 +159,40 @@ class AssetManagerTest extends \PHPUnit\Framework\TestCase
     {
         $themeInfo = $this->createMock(ThemeInfo::class);
         $pipeline = $this->createMock(AssetPipeline::class);
-        $pipeline->method('process')->willReturnCallback(function ($scripts, $type) {
-            $this->assertEquals('js', $type);
+        $pipeline->method('process')->willReturnCallback(function (array $scripts, string $type): array {
+            $this->assertSame('js', $type);
             return $scripts;
         });
         $manager = $this->getMockBuilder(AssetManager::class)
             ->setConstructorArgs([$themeInfo, $pipeline])
             ->onlyMethods(['outputInlineScriptLink', 'outputInlineScriptString', 'outputStyleAssets'])
             ->getMock();
-        $manager->method('outputInlineScriptLink')->willReturnCallback(function ($src, $attrs, $arbitrary) {
-            return $src . '/' . implode('|', $attrs) . '/' . ($arbitrary ? 1 : 0);
-        });
-        $manager->method('outputInlineScriptString')->willReturnCallback(function ($script, $attrs, $arbitrary) {
-            return $script . '/' . implode('|', $attrs) . '/' . ($arbitrary ? 1 : 0);
-        });
+        $manager->method('outputInlineScriptLink')
+            ->willReturnCallback(function (string $src, array $attrs, array $arbitrary): string {
+                return $src . '/' . implode('|', $attrs) . '/' . ($arbitrary ? 1 : 0);
+            });
+        $manager->method('outputInlineScriptString')
+            ->willReturnCallback(function (string $script, array $attrs, array $arbitrary): string {
+                return $script . '/' . implode('|', $attrs) . '/' . ($arbitrary ? 1 : 0);
+            });
         $manager->method('outputStyleAssets')->willReturn('');
         $manager->setView($this->getPhpRenderer());
         $manager->appendScriptString('foo')
             ->appendScriptLink('foo.js')
             ->prependScriptString('bar', ['attr'], options: ['allow_arbitrary_attributes' => true]);
-        $this->assertEquals("bar/attr/1\nfoo//0\nfoo.js//0", trim($manager->outputHeaderAssets()));
+        $this->assertSame("bar/attr/1\nfoo//0\nfoo.js//0", trim($manager->outputHeaderAssets()));
         $manager->forcePrependScriptLink('bar.js')
             ->forcePrependScriptLink('foo.js', ['attr1'], options: ['allow_arbitrary_attributes' => true]);
-        $this->assertEquals("foo.js/attr1/1\nbar.js//0\nbar/attr/1\nfoo//0", trim($manager->outputHeaderAssets()));
+        $this->assertSame("foo.js/attr1/1\nbar.js//0\nbar/attr/1\nfoo//0", trim($manager->outputHeaderAssets()));
         $manager->appendScriptString('foot1', position: 'footer')
             ->prependScriptString('foot0', position: 'footer')
             ->appendScriptLink('foot.js', position: 'footer')
             ->forcePrependScriptLink('pre-foot.js', position: 'footer');
-        $this->assertEquals("pre-foot.js//0\nfoot0//0\nfoot1//0\nfoot.js//0", trim($manager->outputFooterAssets()));
+        $this->assertSame("pre-foot.js//0\nfoot0//0\nfoot1//0\nfoot.js//0", trim($manager->outputFooterAssets()));
         $manager->clearScriptList()
             ->appendScriptString('xyzzy', ['foo'], options: ['allow_arbitrary_attributes' => true]);
-        $this->assertEquals('xyzzy/foo/1', trim($manager->outputHeaderAssets()));
-        $this->assertEquals('', trim($manager->outputFooterAssets()));
+        $this->assertSame('xyzzy/foo/1', trim($manager->outputHeaderAssets()));
+        $this->assertSame('', trim($manager->outputFooterAssets()));
     }
 
     /**
@@ -181,7 +208,7 @@ class AssetManagerTest extends \PHPUnit\Framework\TestCase
             protected $data = [];
 
             /**
-             * Constructor
+             * Constructor.
              *
              * @param string $appendMethod Name of append method to simulate
              */
@@ -233,8 +260,8 @@ class AssetManagerTest extends \PHPUnit\Framework\TestCase
     {
         $themeInfo = $this->createMock(ThemeInfo::class);
         $pipeline = $this->createMock(AssetPipeline::class);
-        $pipeline->method('process')->willReturnCallback(function ($styles, $type) {
-            $this->assertEquals('css', $type);
+        $pipeline->method('process')->willReturnCallback(function (array $styles, string $type): array {
+            $this->assertSame('css', $type);
             return $styles;
         });
         $manager = $this->getMockBuilder(AssetManager::class)
@@ -250,12 +277,12 @@ class AssetManagerTest extends \PHPUnit\Framework\TestCase
         $manager->appendStyleString('foo')
             ->appendStyleLink('foo.css')
             ->forcePrependStyleLink('bar.css');
-        $this->assertEquals("bar.css/screen//\nfoo.css/screen//\nfoo/", trim($manager->outputHeaderAssets()));
+        $this->assertSame("bar.css/screen//\nfoo.css/screen//\nfoo/", trim($manager->outputHeaderAssets()));
         $manager->clearStyleList()
             ->appendStyleLink('xyzzy.css', 'print', 'cond', ['a', 'b'])
             ->appendStyleString('baz', ['c', 'd'])
             ->forcePrependStyleLink('pre.css', 'odd', 'oop', ['z']);
-        $this->assertEquals(
+        $this->assertSame(
             "pre.css/odd/oop/z\nxyzzy.css/print/cond/a|b\nbaz/c|d",
             trim($manager->outputHeaderAssets())
         );

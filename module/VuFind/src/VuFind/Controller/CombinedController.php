@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Combined Search Controller
+ * Combined Search Controller.
  *
  * PHP version 8
  *
@@ -56,7 +56,7 @@ class CombinedController extends AbstractSearch implements \Psr\Log\LoggerAwareI
     use AjaxResponseTrait;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param ServiceLocatorInterface $sm Service locator
      */
@@ -67,7 +67,7 @@ class CombinedController extends AbstractSearch implements \Psr\Log\LoggerAwareI
     }
 
     /**
-     * Home action
+     * Home action.
      *
      * @return mixed
      */
@@ -81,7 +81,7 @@ class CombinedController extends AbstractSearch implements \Psr\Log\LoggerAwareI
     }
 
     /**
-     * Single result action (used for AJAX)
+     * Single result action (used for AJAX).
      *
      * @return mixed
      */
@@ -129,21 +129,19 @@ class CombinedController extends AbstractSearch implements \Psr\Log\LoggerAwareI
             if (!empty($settings['view']->extraErrors)) {
                 $viewParams['extraErrors'] = $settings['view']->extraErrors;
             }
-            // Initialize theme resources:
-            ($this->getViewRenderer()->plugin('setupThemeResources'))(true);
             // Render content:
             $html = $this->getViewRenderer()->render(
                 'combined/results-list.phtml',
                 $viewParams
             );
             // Prepend CSS in case of custom files added by templates:
-            $html = ($this->getViewRenderer()->plugin('headLink'))() . $html;
+            $html = ($this->getViewRenderer()->plugin('assetManager'))->outputHeaderAssets() . $html;
         }
         return $this->getAjaxResponse('text/html', $html);
     }
 
     /**
-     * Results action
+     * Results action.
      *
      * @return mixed
      */

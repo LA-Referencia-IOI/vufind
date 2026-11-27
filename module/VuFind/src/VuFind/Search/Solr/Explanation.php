@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Solr Explanation
+ * Solr Explanation.
  *
  * PHP version 8
  *
@@ -38,7 +38,7 @@ use function floatval;
 use function strlen;
 
 /**
- * Solr Explanation
+ * Solr Explanation.
  *
  * @category VuFind
  * @package  Search_Solr
@@ -49,6 +49,13 @@ use function strlen;
  */
 class Explanation extends \VuFind\Search\Base\Explanation
 {
+    /**
+     * Search backend identifier.
+     *
+     * @var string
+     */
+    protected string $backendId = 'Solr';
+
     /**
      * Value of the relevance score of the best match.
      *
@@ -252,10 +259,8 @@ class Explanation extends \VuFind\Search\Base\Explanation
         $params->set('spellcheck', 'false');
         $explainParams = new ParamBag([
             'fl' => 'id,score',
-            'facet' => 'true',
             'debug' => 'true',
             'indent' => 'true',
-            'param' => 'q',
             'echoParams' => 'all',
             'explainOther' => 'id:"' . addcslashes($recordId, '"') . '"',
         ]);
@@ -263,7 +268,7 @@ class Explanation extends \VuFind\Search\Base\Explanation
 
         // perform request
         $explainCommand = new RawJsonSearchCommand(
-            'Solr',
+            $this->backendId,
             $query,
             0,
             0,

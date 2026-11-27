@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Record driver plugin manager
+ * Record driver plugin manager.
  *
  * PHP version 8
  *
@@ -34,7 +34,7 @@ use Laminas\ServiceManager\Factory\InvokableFactory;
 use function is_callable;
 
 /**
- * Record driver plugin manager
+ * Record driver plugin manager.
  *
  * @category VuFind
  * @package  RecordDrivers
@@ -69,6 +69,7 @@ class PluginManager extends \VuFind\ServiceManager\AbstractPluginManager
         'solrmarc' => SolrMarc::class,
         'solrmarcremote' => SolrMarcRemote::class,
         'solroverdrive' => SolrOverdrive::class,
+        'solrqdc' => SolrQdc::class,
         'solrreserves' => SolrReserves::class,
         'semanticsearch' => SemanticSearch::class,
         'hybridsearch' => HybridSearch::class,
@@ -111,6 +112,7 @@ class PluginManager extends \VuFind\ServiceManager\AbstractPluginManager
         SolrMarc::class => SolrDefaultFactory::class,
         SolrMarcRemote::class => SolrDefaultFactory::class,
         SolrOverdrive::class => SolrOverdriveFactory::class,
+        SolrQdc::class => SolrDefaultFactory::class,
         SolrReserves::class => SolrDefaultWithoutSearchServiceFactory::class,
         SemanticSearch::class => SemanticSearchFactory::class,
         HybridSearch::class => HybridSearchFactory::class,
@@ -120,7 +122,7 @@ class PluginManager extends \VuFind\ServiceManager\AbstractPluginManager
     ];
 
     /**
-     * Constructor
+     * Constructor.
      *
      * Make sure plugins are properly initialized.
      *

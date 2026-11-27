@@ -29,8 +29,17 @@ public/swagger-ui
 tests/phpcs.cache.json
 themes/bootstrap5/scss/vendor/bootstrap
 local
+local/DirLocations.ini
+local/config/vufind.bak
+local/config/vufind/*
 !local/config/vufind/README.txt
 themes/la-referencia
 themes/lareferencia
 volumes/
 volumes
+.agents/
+.ai/
+/AGENTS.md
+/README-AI.md
+/.vscode/settings.json
+/.vscode/extensions.json

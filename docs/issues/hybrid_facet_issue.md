@@ -12,7 +12,7 @@ This makes faceting unusable for some hybrid search queries.
 
 ## Environment
 
-- Solr nightly `10.1.0-SNAPSHOT`
+- Solr `9.11.0`
 - `/combined` request handler
 - Hybrid search combining:
   - lexical query

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Citation view helper
+ * Citation view helper.
  *
  * PHP version 8
  *
@@ -41,7 +41,7 @@ use function sprintf;
 use function strlen;
 
 /**
- * Citation view helper
+ * Citation view helper.
  *
  * @category VuFind
  * @package  View_Helpers
@@ -55,21 +55,21 @@ class Citation extends \Laminas\View\Helper\AbstractHelper implements Translator
     use \VuFind\I18n\Translator\TranslatorAwareTrait;
 
     /**
-     * Citation details
+     * Citation details.
      *
      * @var array
      */
     protected $details = [];
 
     /**
-     * Record driver
+     * Record driver.
      *
      * @var \VuFind\RecordDriver\AbstractBase
      */
     protected $driver;
 
     /**
-     * Date converter
+     * Date converter.
      *
      * @var \VuFind\Date\Converter
      */
@@ -105,7 +105,7 @@ class Citation extends \Laminas\View\Helper\AbstractHelper implements Translator
     ];
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param \VuFind\Date\Converter $converter Date converter
      */
@@ -118,9 +118,9 @@ class Citation extends \Laminas\View\Helper\AbstractHelper implements Translator
      * Store a record driver object and return this object so that the appropriate
      * template can be rendered.
      *
-     * @param \VuFind\RecordDriver\Base $driver Record driver object.
+     * @param \VuFind\RecordDriver\AbstractBase $driver Record driver object.
      *
-     * @return Citation
+     * @return static
      */
     public function __invoke($driver)
     {
@@ -179,7 +179,7 @@ class Citation extends \Laminas\View\Helper\AbstractHelper implements Translator
         $this->details = [
             'authors' => $authors,
             'corporateAuthors' => $corporateAuthors,
-            'title' => trim($title ?? ''),
+            'title' => trim($title),
             'subtitle' => trim($subtitle ?? ''),
             'pubPlace' => $pubPlaces[0] ?? null,
             'pubName' => $publishers[0] ?? null,
@@ -262,7 +262,7 @@ class Citation extends \Laminas\View\Helper\AbstractHelper implements Translator
     }
 
     /**
-     * Retrieve a citation in a particular format
+     * Retrieve a citation in a particular format.
      *
      * Returns the citation in the format specified
      *
@@ -584,7 +584,7 @@ class Citation extends \Laminas\View\Helper\AbstractHelper implements Translator
                 // Use the multi-byte substring function if available to avoid
                 // problems with accented characters:
                 $fnameParts[$i] = function_exists('mb_substr')
-                    ? mb_substr($fnameParts[$i], 0, 1, 'utf8') . '.'
+                    ? mb_substr($fnameParts[$i], 0, 1, 'UTF-8') . '.'
                     : substr($fnameParts[$i], 0, 1) . '.';
             }
             $name .= ', ' . implode(' ', $fnameParts);
